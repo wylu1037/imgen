@@ -36,7 +36,7 @@ export function ImageSelect({
     >
       <Select.Trigger
         aria-label={ariaLabel}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+        className="flex h-11 w-full items-center justify-between rounded-lg border border-input bg-background px-3.5 py-2 text-left text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] transition-all duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-ring/20 data-disabled:cursor-not-allowed data-disabled:opacity-50"
       >
         <Select.Value>{selected?.label ?? value}</Select.Value>
         <Select.Icon>

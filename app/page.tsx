@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ImageIcon, Loader2, Sparkles } from "lucide-react"
+import { ImageIcon, Loader2, SlidersHorizontal, Sparkles } from "lucide-react"
 
 import { ImageSelect } from "@/components/image-select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -69,14 +69,14 @@ export default function Home() {
       const data = (await response.json()) as GenerateResponse
 
       if (!response.ok) {
-        throw new Error(data.error || "图片生成失败。")
+        throw new Error(data.error || "Image generation failed.")
       }
 
       setImage(data.image || "")
       setUsedModel(data.model || model)
       setRevisedPrompt(data.revisedPrompt || "")
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "图片生成失败。")
+      setError(caughtError instanceof Error ? caughtError.message : "Image generation failed.")
     } finally {
       setIsGenerating(false)
     }
@@ -94,14 +94,14 @@ export default function Home() {
             AI Image Workspace
           </h1>
           <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-muted-foreground sm:text-xl">
-            用一个温暖极简的控制台配置模型、尺寸和质量，通过服务端 API 安全调用 OpenAI 图片生成能力。
+            Configure model, size, and quality in a warm minimal console, then generate images through a server-side OpenAI API route.
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card/70 p-5 shadow-card backdrop-blur">
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div className="rounded-xl bg-secondary p-4">
               <div className="font-bold">Model</div>
-              <div className="mt-1 text-muted-foreground">可切换</div>
+              <div className="mt-1 text-muted-foreground">Editable</div>
             </div>
             <div className="rounded-xl bg-secondary p-4">
               <div className="font-bold">Output</div>
@@ -109,34 +109,51 @@ export default function Home() {
             </div>
             <div className="rounded-xl bg-secondary p-4">
               <div className="font-bold">API Key</div>
-              <div className="mt-1 text-muted-foreground">仅服务端</div>
+              <div className="mt-1 text-muted-foreground">Server only</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid flex-1 gap-6 pb-10 lg:grid-cols-[420px_1fr]">
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Generate</CardTitle>
-            <CardDescription>
-              默认模型可在 .env.local 的 IMAGE_MODEL 中配置，也可以在这里覆盖。
-            </CardDescription>
+      <section className="grid flex-1 gap-6 pb-10 lg:grid-cols-[440px_1fr]">
+        <Card className="h-fit overflow-hidden bg-card/95">
+          <CardHeader className="border-b border-border/70 bg-secondary/45 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle className="text-xl">Generate</CardTitle>
+                <CardDescription className="mt-2 leading-6">
+                  Keep provider credentials on the server. Override the image model per request when needed.
+                </CardDescription>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
+                <SlidersHorizontal className="h-4 w-4 text-primary" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5">
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <div className="space-y-2">
-                <Label htmlFor="model">Model</Label>
-                <Input
-                  id="model"
-                  value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  placeholder="gpt-image-1 或 gpt-image-2"
-                />
+              <div className="rounded-2xl border border-border bg-secondary/35 p-3.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="model">Model</Label>
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-foreground">
+                      Request scope
+                    </span>
+                  </div>
+                  <Input
+                    id="model"
+                    value={model}
+                    onChange={(event) => setModel(event.target.value)}
+                    placeholder="gpt-image-1 or gpt-image-2"
+                  />
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Leave the field aligned with your provider model name. The server falls back to IMAGE_MODEL.
+                  </p>
+                </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <div className="space-y-2">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
                   <Label>Size</Label>
                   <ImageSelect
                     ariaLabel="Select image size"
@@ -144,8 +161,11 @@ export default function Home() {
                     onValueChange={setSize}
                     options={sizeOptions}
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Choose the canvas ratio before generation.
+                  </p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
                   <Label>Quality</Label>
                   <ImageSelect
                     ariaLabel="Select image quality"
@@ -153,32 +173,40 @@ export default function Home() {
                     onValueChange={setQuality}
                     options={qualityOptions}
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Auto lets the model balance cost and detail.
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="prompt">Prompt</Label>
+              <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+                <div className="flex items-end justify-between gap-3">
+                  <Label htmlFor="prompt">Prompt</Label>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {prompt.length}/4000
+                  </span>
+                </div>
                 <Textarea
                   id="prompt"
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   placeholder="Describe the image you want to generate..."
                 />
-                <p className="text-xs text-muted-foreground">
-                  {prompt.length}/4000 characters
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Describe subject, material, composition, lighting, and any constraints in one concise brief.
                 </p>
               </div>
 
               {error ? (
                 <Alert variant="destructive">
-                  <AlertTitle>生成失败</AlertTitle>
+                  <AlertTitle>Generation failed</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               ) : null}
 
               <Button
                 type="submit"
-                className="w-full"
+                className="h-12 w-full rounded-xl"
                 disabled={isGenerating || !prompt.trim()}
                 size="lg"
               >
@@ -197,7 +225,7 @@ export default function Home() {
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
-              生成结果会展示在这里；如果模型返回 revised prompt，也会一并显示。
+              Generated output appears here. If the model returns a revised prompt, it will be shown below the image.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -214,9 +242,9 @@ export default function Home() {
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm">
                     <ImageIcon className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <h2 className="mt-5 text-xl font-bold tracking-tight">等待生成</h2>
+                  <h2 className="mt-5 text-xl font-bold tracking-tight">Ready for a prompt</h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    配置模型和提示词后点击生成。没有 API key 时会显示配置错误，不会暴露密钥。
+                    Configure the request and generate an image. Missing API credentials are reported inline without exposing secrets.
                   </p>
                 </div>
               )}

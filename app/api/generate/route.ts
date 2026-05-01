@@ -19,7 +19,7 @@ function getString(value: unknown) {
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
     return Response.json(
-      { error: "缺少 OPENAI_API_KEY，请先在 .env.local 中配置。" },
+      { error: "Missing OPENAI_API_KEY. Add it to .env.local before generating images." },
       { status: 500 },
     )
   }
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as GenerateRequest
   } catch {
-    return Response.json({ error: "请求体必须是有效 JSON。" }, { status: 400 })
+    return Response.json({ error: "Request body must be valid JSON." }, { status: 400 })
   }
 
   const prompt = getString(body.prompt)
@@ -38,23 +38,26 @@ export async function POST(request: Request) {
   const quality = getString(body.quality) || "auto"
 
   if (!prompt) {
-    return Response.json({ error: "请输入图片描述。" }, { status: 400 })
+    return Response.json({ error: "Enter an image prompt." }, { status: 400 })
   }
 
   if (prompt.length > 4000) {
-    return Response.json({ error: "图片描述不能超过 4000 个字符。" }, { status: 400 })
+    return Response.json({ error: "Prompt must be 4000 characters or fewer." }, { status: 400 })
   }
 
   if (!sizes.has(size)) {
-    return Response.json({ error: "不支持的图片尺寸。" }, { status: 400 })
+    return Response.json({ error: "Unsupported image size." }, { status: 400 })
   }
 
   if (!qualities.has(quality)) {
-    return Response.json({ error: "不支持的图片质量。" }, { status: 400 })
+    return Response.json({ error: "Unsupported image quality." }, { status: 400 })
   }
 
   try {
-    const client = new OpenAI()
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL || undefined,
+    })
     const response = await client.images.generate({
       model,
       prompt,
@@ -68,7 +71,10 @@ export async function POST(request: Request) {
     const url = image?.url
 
     if (!b64 && !url) {
-      return Response.json({ error: "图片生成成功但没有返回可展示的图片。" }, { status: 502 })
+      return Response.json(
+        { error: "The image was generated, but the provider did not return a displayable asset." },
+        { status: 502 },
+      )
     }
 
     return Response.json({
@@ -77,10 +83,10 @@ export async function POST(request: Request) {
       revisedPrompt: image?.revised_prompt,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : "图片生成失败。"
+    const message = error instanceof Error ? error.message : "Image generation failed."
 
     return Response.json(
-      { error: message || "图片生成失败，请稍后重试。" },
+      { error: message || "Image generation failed. Try again later." },
       { status: 502 },
     )
   }
