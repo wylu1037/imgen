@@ -83,7 +83,7 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-8 sm:px-8 lg:px-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pt-8 sm:px-8 lg:px-10">
       <section className="grid gap-8 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
@@ -94,7 +94,8 @@ export default function Home() {
             AI Image Workspace
           </h1>
           <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-muted-foreground sm:text-xl">
-            Configure model, size, and quality in a warm minimal console, then generate images through a server-side OpenAI API route.
+            Configure model, size, and quality in a warm minimal console, then
+            generate images through a server-side OpenAI API route.
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card/70 p-5 shadow-card backdrop-blur">
@@ -115,14 +116,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="grid flex-1 gap-6 pb-10 lg:grid-cols-[440px_1fr]">
-        <Card className="h-fit overflow-hidden bg-card/95">
+      <section className="grid flex-1 items-stretch gap-6 pb-6 lg:grid-cols-[440px_1fr]">
+        <Card className="overflow-hidden bg-card/95">
           <CardHeader className="border-b border-border/70 bg-secondary/45 p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <CardTitle className="text-xl">Generate</CardTitle>
                 <CardDescription className="mt-2 leading-6">
-                  Keep provider credentials on the server. Override the image model per request when needed.
+                  Keep provider credentials on the server. Override the image
+                  model per request when needed.
                 </CardDescription>
               </div>
               <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
@@ -147,7 +149,8 @@ export default function Home() {
                     placeholder="gpt-image-1 or gpt-image-2"
                   />
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Leave the field aligned with your provider model name. The server falls back to IMAGE_MODEL.
+                    Leave the field aligned with your provider model name. The
+                    server falls back to IMAGE_MODEL.
                   </p>
                 </div>
               </div>
@@ -193,7 +196,8 @@ export default function Home() {
                   placeholder="Describe the image you want to generate..."
                 />
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Describe subject, material, composition, lighting, and any constraints in one concise brief.
+                  Describe subject, material, composition, lighting, and any
+                  constraints in one concise brief.
                 </p>
               </div>
 
@@ -221,30 +225,34 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
+        <Card className="flex flex-col overflow-hidden">
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
-              Generated output appears here. If the model returns a revised prompt, it will be shown below the image.
+              Generated output appears here. If the model returns a revised
+              prompt, it will be shown below the image.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex min-h-[520px] items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/70 p-4">
+          <CardContent className="flex flex-1 flex-col">
+            <div className="flex min-h-130 flex-1 items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/70 p-4">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={image}
                   alt={revisedPrompt || prompt}
-                  className="max-h-[680px] w-full rounded-xl object-contain shadow-card"
+                  className="max-h-170 w-full rounded-xl object-contain shadow-card"
                 />
               ) : (
                 <div className="mx-auto max-w-sm text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm">
                     <ImageIcon className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <h2 className="mt-5 text-xl font-bold tracking-tight">Ready for a prompt</h2>
+                  <h2 className="mt-5 text-xl font-bold tracking-tight">
+                    Ready for a prompt
+                  </h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Configure the request and generate an image. Missing API credentials are reported inline without exposing secrets.
+                    Configure the request and generate an image. Missing API
+                    credentials are reported inline without exposing secrets.
                   </p>
                 </div>
               )}
@@ -259,7 +267,9 @@ export default function Home() {
                 {revisedPrompt ? (
                   <div>
                     <span className="font-semibold">Revised prompt: </span>
-                    <span className="text-muted-foreground">{revisedPrompt}</span>
+                    <span className="text-muted-foreground">
+                      {revisedPrompt}
+                    </span>
                   </div>
                 ) : null}
               </div>
@@ -268,5 +278,5 @@ export default function Home() {
         </Card>
       </section>
     </main>
-  )
+  );
 }
