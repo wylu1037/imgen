@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   const prompt = getString(body.prompt)
-  const model = getString(body.model) || process.env.IMAGE_MODEL || "gpt-image-1"
+  const model = getString(body.model) || process.env.IMAGE_MODEL || "gpt-image-2"
   const size = getString(body.size) || "1024x1024"
   const quality = getString(body.quality) || "auto"
 
@@ -83,11 +83,28 @@ export async function POST(request: Request) {
       revisedPrompt: image?.revised_prompt,
     })
   } catch (error) {
+    const status =
+      typeof error === "object" && error && "status" in error && Number.isInteger(Number(error.status))
+        ? Number((error as { status: number }).status)
+        : 502
+    const errorBody =
+      typeof error === "object" && error && "error" in error
+        ? (error as { error: unknown }).error
+        : undefined
     const message = error instanceof Error ? error.message : "Image generation failed."
+
+    console.error("[/api/generate] image generation failed", {
+      status,
+      message,
+      model,
+      baseURL: process.env.OPENAI_BASE_URL || "(default)",
+      errorBody,
+      error,
+    })
 
     return Response.json(
       { error: message || "Image generation failed. Try again later." },
-      { status: 502 },
+      { status: status >= 400 && status < 600 ? status : 502 },
     )
   }
 }

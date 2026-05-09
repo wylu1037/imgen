@@ -39,7 +39,7 @@ type GenerateResponse = {
 }
 
 export default function Home() {
-  const [model, setModel] = React.useState("gpt-image-1")
+  const [model, setModel] = React.useState("gpt-image-2");
   const [prompt, setPrompt] = React.useState(
     "A warm minimal desk workspace for AI image generation, Notion-inspired product design, soft surfaces, editorial lighting",
   )
