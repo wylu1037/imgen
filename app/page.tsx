@@ -18,10 +18,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 const sizeOptions = [
-  { label: "Square · 1024×1024", value: "1024x1024" },
-  { label: "Portrait · 1024×1536", value: "1024x1536" },
-  { label: "Landscape · 1536×1024", value: "1536x1024" },
-  { label: "Auto", value: "auto" },
+  { label: "Square", meta: "1024 × 1024", value: "1024x1024" },
+  { label: "Portrait", meta: "1024 × 1536", value: "1024x1536" },
+  { label: "Landscape", meta: "1536 × 1024", value: "1536x1024" },
+  { label: "Auto", meta: "Model picks", value: "auto" },
 ]
 
 const qualityOptions = [
@@ -86,31 +86,32 @@ export default function Home() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pt-8 sm:px-8 lg:px-10">
       <section className="grid gap-8 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground shadow-sm">
+            <Sparkles className="h-3 w-3 text-primary" />
             Configurable image API
           </div>
-          <h1 className="text-5xl font-bold tracking-[-0.055em] text-foreground sm:text-6xl lg:text-7xl">
-            AI Image Workspace
+          <h1 className="font-display text-5xl font-normal leading-[1.02] tracking-[-0.015em] text-foreground sm:text-6xl lg:text-[4.25rem]">
+            AI Image <span className="italic">Workspace</span>
+            <span className="text-primary">.</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-muted-foreground sm:text-xl">
+          <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
             Configure model, size, and quality in a warm minimal console, then
             generate images through a server-side OpenAI API route.
           </p>
         </div>
-        <div className="rounded-2xl border border-border bg-card/70 p-5 shadow-card backdrop-blur">
+        <div className="rounded-2xl border border-border bg-card/70 p-4 shadow-card backdrop-blur">
           <div className="grid grid-cols-3 gap-3 text-sm">
-            <div className="rounded-xl bg-secondary p-4">
-              <div className="font-bold">Model</div>
-              <div className="mt-1 text-muted-foreground">Editable</div>
+            <div className="rounded-xl bg-secondary px-3.5 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Model</div>
+              <div className="mt-1 text-sm font-medium text-foreground">Editable</div>
             </div>
-            <div className="rounded-xl bg-secondary p-4">
-              <div className="font-bold">Output</div>
-              <div className="mt-1 text-muted-foreground">Base64/URL</div>
+            <div className="rounded-xl bg-secondary px-3.5 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Output</div>
+              <div className="mt-1 text-sm font-medium text-foreground">Base64<span className="text-muted-foreground">/</span>URL</div>
             </div>
-            <div className="rounded-xl bg-secondary p-4">
-              <div className="font-bold">API Key</div>
-              <div className="mt-1 text-muted-foreground">Server only</div>
+            <div className="rounded-xl bg-secondary px-3.5 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">API Key</div>
+              <div className="mt-1 text-sm font-medium text-foreground">Server only</div>
             </div>
           </div>
         </div>
@@ -121,7 +122,9 @@ export default function Home() {
           <CardHeader className="border-b border-border/70 bg-secondary/45 p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <CardTitle className="text-xl">Generate</CardTitle>
+                <CardTitle className="font-display text-xl font-normal tracking-tight">
+                  Generate<span className="text-primary">.</span>
+                </CardTitle>
                 <CardDescription className="mt-2 leading-6">
                   Keep provider credentials on the server. Override the image
                   model per request when needed.
@@ -134,30 +137,31 @@ export default function Home() {
           </CardHeader>
           <CardContent className="p-5">
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <div className="rounded-2xl border border-border bg-secondary/35 p-3.5">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="model">Model</Label>
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-foreground">
-                      Request scope
-                    </span>
-                  </div>
-                  <Input
-                    id="model"
-                    value={model}
-                    onChange={(event) => setModel(event.target.value)}
-                    placeholder="gpt-image-1 or gpt-image-2"
-                  />
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    Leave the field aligned with your provider model name. The
-                    server falls back to IMAGE_MODEL.
-                  </p>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="model" className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Model
+                  </Label>
+                  <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-foreground">
+                    Request scope
+                  </span>
                 </div>
+                <Input
+                  id="model"
+                  value={model}
+                  onChange={(event) => setModel(event.target.value)}
+                  placeholder="gpt-image-1 or gpt-image-2"
+                />
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Aligns with your provider model name. Server falls back to IMAGE_MODEL.
+                </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-                  <Label>Size</Label>
+                <div className="space-y-1.5">
+                  <Label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Size
+                  </Label>
                   <ImageSelect
                     ariaLabel="Select image size"
                     value={size}
@@ -165,11 +169,13 @@ export default function Home() {
                     options={sizeOptions}
                   />
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Choose the canvas ratio before generation.
+                    Canvas ratio applied before generation.
                   </p>
                 </div>
-                <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-                  <Label>Quality</Label>
+                <div className="space-y-1.5">
+                  <Label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Quality
+                  </Label>
                   <ImageSelect
                     ariaLabel="Select image quality"
                     value={quality}
@@ -177,16 +183,18 @@ export default function Home() {
                     options={qualityOptions}
                   />
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Auto lets the model balance cost and detail.
+                    Auto balances cost and detail.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+              <div className="space-y-1.5">
                 <div className="flex items-end justify-between gap-3">
-                  <Label htmlFor="prompt">Prompt</Label>
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {prompt.length}/4000
+                  <Label htmlFor="prompt" className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Prompt
+                  </Label>
+                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                    {prompt.length}<span className="text-muted-foreground/60">/4000</span>
                   </span>
                 </div>
                 <Textarea
@@ -196,8 +204,7 @@ export default function Home() {
                   placeholder="Describe the image you want to generate..."
                 />
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Describe subject, material, composition, lighting, and any
-                  constraints in one concise brief.
+                  Describe subject, material, composition, lighting, and constraints in one concise brief.
                 </p>
               </div>
 
@@ -227,7 +234,9 @@ export default function Home() {
 
         <Card className="flex flex-col overflow-hidden">
           <CardHeader>
-            <CardTitle>Preview</CardTitle>
+            <CardTitle className="font-display text-xl font-normal tracking-tight">
+              Preview<span className="text-primary">.</span>
+            </CardTitle>
             <CardDescription>
               Generated output appears here. If the model returns a revised
               prompt, it will be shown below the image.
@@ -247,7 +256,7 @@ export default function Home() {
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm">
                     <ImageIcon className="h-7 w-7 text-muted-foreground" />
                   </div>
-                  <h2 className="mt-5 text-xl font-bold tracking-tight">
+                  <h2 className="mt-4 font-display text-lg tracking-tight text-foreground">
                     Ready for a prompt
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">

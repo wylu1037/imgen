@@ -26,6 +26,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --font-display: var(--font-instrument-serif), "Times New Roman", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
@@ -67,6 +69,12 @@ body {
     linear-gradient(180deg, #ffffff 0%, var(--background) 52%, #f6f5f4 100%);
   color: var(--foreground);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: "ss01", "ss02", "cv11";
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "liga", "dlig", "swsh";
 }
 
 button,
