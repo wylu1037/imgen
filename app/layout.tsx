@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google"
 
+import { AmbientBackground } from "./_components/ambient-background"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
       >
+        <AmbientBackground />
         {children}
       </body>
     </html>
