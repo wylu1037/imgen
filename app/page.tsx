@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import * as React from "react"
 import { ImageIcon, Loader2, SlidersHorizontal, Sparkles } from "lucide-react"
 
@@ -84,10 +85,10 @@ export default function Home() {
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pt-8 sm:px-8 lg:px-10">
-      <section className="grid gap-8 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
+      <section className="grid gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
           <div
-            className="reveal mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground shadow-sm backdrop-blur"
+            className="reveal mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-micro-uppercase text-steel shadow-subtle"
             style={{ ["--reveal-delay" as string]: "60" }}
           >
             <span className="relative flex h-1.5 w-1.5">
@@ -98,85 +99,85 @@ export default function Home() {
             Configurable image API
           </div>
           <h1
-            className="reveal font-display text-5xl font-normal leading-[1.02] tracking-[-0.015em] text-foreground sm:text-6xl lg:text-[4.25rem]"
+            className="reveal text-hero text-ink"
             style={{ ["--reveal-delay" as string]: "160" }}
           >
-            AI Image <span className="italic">Workspace</span>
-            <span className="text-primary">.</span>
+            AI Image Workspace<span className="text-primary">.</span>
           </h1>
           <p
-            className="reveal mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg"
+            className="reveal mt-6 max-w-xl text-subtitle text-slate"
             style={{ ["--reveal-delay" as string]: "260" }}
           >
             Configure model, size, and quality in a warm minimal console, then
             generate images through a server-side OpenAI API route.
           </p>
+          <div
+            className="reveal mt-7 flex flex-wrap items-center gap-3"
+            style={{ ["--reveal-delay" as string]: "320" }}
+          >
+            <Button asChild size="lg">
+              <a href="#workspace">
+                <Sparkles />
+                Open workspace
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <a
+                href="https://platform.openai.com/docs/api-reference/images"
+                target="_blank"
+                rel="noreferrer"
+              >
+                View API docs
+              </a>
+            </Button>
+          </div>
         </div>
         <div
-          className="reveal rounded-2xl border border-border bg-card/70 p-4 shadow-card backdrop-blur-md"
+          className="reveal grid grid-cols-2 gap-3 rounded-xl border border-border bg-card p-3 shadow-card sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4"
           style={{ ["--reveal-delay" as string]: "340" }}
         >
-          <div className="grid grid-cols-3 gap-3 text-sm">
-            <div className="group rounded-xl bg-secondary/80 px-3.5 py-3 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-secondary hover:shadow-sm">
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Model
-              </div>
-              <div className="mt-1 text-sm font-medium text-foreground">
-                Editable
-              </div>
-            </div>
-            <div className="group rounded-xl bg-secondary/80 px-3.5 py-3 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-secondary hover:shadow-sm">
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Output
-              </div>
-              <div className="mt-1 text-sm font-medium text-foreground">
-                Base64<span className="text-muted-foreground">/</span>URL
-              </div>
-            </div>
-            <div className="group rounded-xl bg-secondary/80 px-3.5 py-3 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-secondary hover:shadow-sm">
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                API Key
-              </div>
-              <div className="mt-1 text-sm font-medium text-foreground">
-                Server only
-              </div>
-            </div>
-          </div>
+          <StatTile tone="lavender" label="Model" value="Editable" />
+          <StatTile tone="peach" label="Output" value="Base64 / URL" />
+          <StatTile tone="mint" label="API Key" value="Server only" />
+          <StatTile tone="sky" label="Latency" value="≈ 6–12s" />
         </div>
       </section>
 
-      <section className="grid flex-1 items-stretch gap-6 pb-6 lg:grid-cols-[440px_1fr]">
+      <section
+        id="workspace"
+        className="grid flex-1 items-stretch gap-6 pb-10 lg:grid-cols-[440px_1fr]"
+      >
         <Card
-          className="reveal overflow-hidden bg-card/85 shadow-card backdrop-blur-xl"
+          className="reveal overflow-hidden"
           style={{ ["--reveal-delay" as string]: "420" }}
         >
-          <CardHeader className="border-b border-border/70 bg-secondary/45 p-5">
+          <CardHeader className="border-b border-hairline-soft bg-tint-cream/50 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <CardTitle className="font-display text-xl font-normal tracking-tight">
+                <CardTitle>
                   Generate<span className="text-primary">.</span>
                 </CardTitle>
-                <CardDescription className="mt-2 leading-6">
+                <CardDescription className="mt-2">
                   Keep provider credentials on the server. Override the image
                   model per request when needed.
                 </CardDescription>
               </div>
-              <div className="rounded-xl border border-border bg-card p-2 shadow-sm transition-transform duration-500 ease-out hover:rotate-90">
+              <div className="rounded-md border border-border bg-card p-2 shadow-subtle">
                 <SlidersHorizontal className="h-4 w-4 text-primary" />
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="p-6">
             <form className="space-y-5" onSubmit={handleSubmit}>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <Label
                     htmlFor="model"
-                    className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
+                    className="text-micro-uppercase text-steel"
                   >
                     Model
                   </Label>
-                  <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-foreground">
+                  <span className="rounded-xs bg-tint-lavender px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-brand-purple-800">
                     Request scope
                   </span>
                 </div>
@@ -186,15 +187,15 @@ export default function Home() {
                   onChange={(event) => setModel(event.target.value)}
                   placeholder="gpt-image-1 or gpt-image-2"
                 />
-                <p className="text-xs leading-5 text-muted-foreground">
+                <p className="text-[13px] leading-5 text-steel">
                   Aligns with your provider model name. Server falls back to
                   IMAGE_MODEL.
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="space-y-2">
+                  <Label className="text-micro-uppercase text-steel">
                     Size
                   </Label>
                   <ImageSelect
@@ -203,12 +204,12 @@ export default function Home() {
                     onValueChange={setSize}
                     options={sizeOptions}
                   />
-                  <p className="text-xs leading-5 text-muted-foreground">
+                  <p className="text-[13px] leading-5 text-steel">
                     Canvas ratio applied before generation.
                   </p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="space-y-2">
+                  <Label className="text-micro-uppercase text-steel">
                     Quality
                   </Label>
                   <ImageSelect
@@ -217,23 +218,23 @@ export default function Home() {
                     onValueChange={setQuality}
                     options={qualityOptions}
                   />
-                  <p className="text-xs leading-5 text-muted-foreground">
+                  <p className="text-[13px] leading-5 text-steel">
                     Auto balances cost and detail.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-end justify-between gap-3">
                   <Label
                     htmlFor="prompt"
-                    className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground"
+                    className="text-micro-uppercase text-steel"
                   >
                     Prompt
                   </Label>
-                  <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                  <span className="text-[11px] tabular-nums text-steel">
                     {prompt.length}
-                    <span className="text-muted-foreground/60">/4000</span>
+                    <span className="text-stone">/4000</span>
                   </span>
                 </div>
                 <Textarea
@@ -242,7 +243,7 @@ export default function Home() {
                   onChange={(event) => setPrompt(event.target.value)}
                   placeholder="Describe the image you want to generate..."
                 />
-                <p className="text-xs leading-5 text-muted-foreground">
+                <p className="text-[13px] leading-5 text-steel">
                   Describe subject, material, composition, lighting, and
                   constraints in one concise brief.
                 </p>
@@ -257,7 +258,7 @@ export default function Home() {
 
               <Button
                 type="submit"
-                className="group h-12 w-full rounded-xl transition-all duration-200 ease-out hover:shadow-md active:translate-y-px"
+                className="group h-12 w-full"
                 disabled={isGenerating || !prompt.trim()}
                 size="lg"
               >
@@ -273,11 +274,11 @@ export default function Home() {
         </Card>
 
         <Card
-          className="reveal flex flex-col overflow-hidden bg-card/85 shadow-card backdrop-blur-xl"
+          className="reveal flex flex-col overflow-hidden"
           style={{ ["--reveal-delay" as string]: "500" }}
         >
           <CardHeader>
-            <CardTitle className="font-display text-xl font-normal tracking-tight">
+            <CardTitle>
               Preview<span className="text-primary">.</span>
             </CardTitle>
             <CardDescription>
@@ -286,7 +287,7 @@ export default function Home() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
-            <div className="relative flex min-h-130 flex-1 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-border bg-secondary/70 p-4">
+            <div className="relative flex min-h-130 flex-1 items-center justify-center overflow-hidden rounded-lg border border-dashed border-hairline-strong bg-surface-soft p-4">
               {!image ? (
                 <span
                   aria-hidden
@@ -296,22 +297,24 @@ export default function Home() {
                 </span>
               ) : null}
               {image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={image}
                   alt={revisedPrompt || prompt}
-                  className="max-h-170 w-full rounded-xl object-contain shadow-card"
+                  width={1536}
+                  height={1536}
+                  unoptimized
+                  className="max-h-170 w-full rounded-lg object-contain shadow-mockup"
                 />
               ) : (
                 <div className="mx-auto max-w-sm text-center">
-                  <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-card shadow-sm">
-                    <span className="absolute inset-0 -z-10 rounded-2xl bg-[radial-gradient(circle,rgba(0,117,222,0.18),transparent_70%)] blur-xl" />
-                    <ImageIcon className="h-7 w-7 text-muted-foreground animate-float-soft" />
+                  <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-card shadow-subtle">
+                    <span className="absolute inset-0 -z-10 rounded-lg bg-[radial-gradient(circle,rgba(86,69,212,0.18),transparent_70%)] blur-xl" />
+                    <ImageIcon className="h-7 w-7 text-stone animate-float-soft" />
                   </div>
-                  <h2 className="mt-4 font-display text-lg tracking-tight text-foreground">
+                  <h2 className="mt-4 text-heading-5 text-ink">
                     Ready for a prompt
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 text-[13px] leading-6 text-steel">
                     Configure the request and generate an image. Missing API
                     credentials are reported inline without exposing secrets.
                   </p>
@@ -320,17 +323,15 @@ export default function Home() {
             </div>
 
             {image ? (
-              <div className="mt-5 space-y-3 rounded-xl bg-secondary p-4 text-sm">
+              <div className="mt-5 space-y-2 rounded-md border border-hairline-soft bg-secondary p-4 text-[13px]">
                 <div>
-                  <span className="font-semibold">Model: </span>
-                  <span className="text-muted-foreground">{usedModel}</span>
+                  <span className="font-semibold text-ink">Model: </span>
+                  <span className="text-slate">{usedModel}</span>
                 </div>
                 {revisedPrompt ? (
                   <div>
-                    <span className="font-semibold">Revised prompt: </span>
-                    <span className="text-muted-foreground">
-                      {revisedPrompt}
-                    </span>
+                    <span className="font-semibold text-ink">Revised prompt: </span>
+                    <span className="text-slate">{revisedPrompt}</span>
                   </div>
                 ) : null}
               </div>
@@ -340,4 +341,31 @@ export default function Home() {
       </section>
     </main>
   );
+}
+
+const tileToneMap = {
+  lavender: { bg: "bg-tint-lavender", text: "text-brand-purple-800" },
+  peach: { bg: "bg-tint-peach", text: "text-brand-orange-deep" },
+  mint: { bg: "bg-tint-mint", text: "text-brand-green" },
+  sky: { bg: "bg-tint-sky", text: "text-link-blue-pressed" },
+} as const
+
+type StatTileProps = {
+  label: string
+  value: string
+  tone: keyof typeof tileToneMap
+}
+
+function StatTile({ label, value, tone }: StatTileProps) {
+  const palette = tileToneMap[tone]
+  return (
+    <div
+      className={`group rounded-md ${palette.bg} px-4 py-3 transition-transform duration-300 ease-out hover:-translate-y-0.5`}
+    >
+      <div className={`text-micro-uppercase ${palette.text} opacity-70`}>
+        {label}
+      </div>
+      <div className="mt-1.5 text-sm font-semibold text-charcoal">{value}</div>
+    </div>
+  )
 }
