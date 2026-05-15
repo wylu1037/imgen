@@ -22,6 +22,7 @@
     "openai": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "sonner": "^2.0.7",
     "tailwind-merge": "latest"
   },
   "devDependencies": {

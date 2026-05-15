@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Toaster } from "sonner"
 
 import { AmbientBackground } from "./_components/ambient-background"
 import "./globals.css"
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body>
         <AmbientBackground />
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

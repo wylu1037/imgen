@@ -3,9 +3,9 @@
 import Image from "next/image"
 import * as React from "react"
 import { ImageIcon, Loader2, SlidersHorizontal, Sparkles } from "lucide-react"
+import { toast } from "sonner"
 
 import { ImageSelect } from "@/components/image-select"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -49,12 +49,10 @@ export default function Home() {
   const [image, setImage] = React.useState("")
   const [usedModel, setUsedModel] = React.useState("")
   const [revisedPrompt, setRevisedPrompt] = React.useState("")
-  const [error, setError] = React.useState("")
   const [isGenerating, setIsGenerating] = React.useState(false)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError("")
     setImage("")
     setRevisedPrompt("")
     setIsGenerating(true)
@@ -77,7 +75,8 @@ export default function Home() {
       setUsedModel(data.model || model)
       setRevisedPrompt(data.revisedPrompt || "")
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Image generation failed.")
+      const message = caughtError instanceof Error ? caughtError.message : "Image generation failed."
+      toast.error(message)
     } finally {
       setIsGenerating(false)
     }
@@ -248,13 +247,6 @@ export default function Home() {
                   constraints in one concise brief.
                 </p>
               </div>
-
-              {error ? (
-                <Alert variant="destructive">
-                  <AlertTitle>Generation failed</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              ) : null}
 
               <Button
                 type="submit"
