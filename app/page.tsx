@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import * as React from "react"
-import { ImageIcon, Loader2, SlidersHorizontal, Sparkles } from "lucide-react"
+import { ImageIcon, Loader2, Settings, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { ImageSelect } from "@/components/image-select"
@@ -18,6 +18,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
+const providerSettingsStorageKey = "imgen.providerSettings"
+const defaultImageModel = "gpt-image-2"
+
 const sizeOptions = [
   { label: "Square", meta: "1024 × 1024", value: "1024x1024" },
   { label: "Portrait", meta: "1024 × 1536", value: "1024x1536" },
@@ -32,6 +35,50 @@ const qualityOptions = [
   { label: "High", value: "high" },
 ]
 
+type ProviderSettings = {
+  apiKey: string
+  baseURL: string
+  defaultModel: string
+}
+
+function readProviderSettings(): ProviderSettings {
+  if (typeof window === "undefined") {
+    return {
+      apiKey: "",
+      baseURL: "",
+      defaultModel: defaultImageModel,
+    }
+  }
+
+  const storedSettings = window.localStorage.getItem(providerSettingsStorageKey)
+
+  if (!storedSettings) {
+    return {
+      apiKey: "",
+      baseURL: "",
+      defaultModel: defaultImageModel,
+    }
+  }
+
+  try {
+    const settings = JSON.parse(storedSettings) as Partial<ProviderSettings>
+
+    return {
+      apiKey: settings.apiKey || "",
+      baseURL: settings.baseURL || "",
+      defaultModel: settings.defaultModel?.trim() || defaultImageModel,
+    }
+  } catch {
+    window.localStorage.removeItem(providerSettingsStorageKey)
+
+    return {
+      apiKey: "",
+      baseURL: "",
+      defaultModel: defaultImageModel,
+    }
+  }
+}
+
 type GenerateResponse = {
   image?: string
   model?: string
@@ -40,7 +87,9 @@ type GenerateResponse = {
 }
 
 export default function Home() {
-  const [model, setModel] = React.useState("gpt-image-2");
+  const [providerSettings, setProviderSettings] = React.useState(readProviderSettings)
+  const { apiKey, baseURL, defaultModel } = providerSettings
+  const [model, setModel] = React.useState(providerSettings.defaultModel)
   const [prompt, setPrompt] = React.useState(
     "A warm minimal desk workspace for AI image generation, Notion-inspired product design, soft surfaces, editorial lighting",
   )
@@ -50,9 +99,74 @@ export default function Home() {
   const [usedModel, setUsedModel] = React.useState("")
   const [revisedPrompt, setRevisedPrompt] = React.useState("")
   const [isGenerating, setIsGenerating] = React.useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    window.localStorage.setItem(providerSettingsStorageKey, JSON.stringify(providerSettings))
+  }, [providerSettings])
+
+  function updateProviderSetting(key: keyof ProviderSettings, value: string) {
+    setProviderSettings((settings) => ({
+      ...settings,
+      [key]: value,
+    }))
+  }
+
+  function handleDefaultModelChange(value: string) {
+    setProviderSettings((settings) => {
+      const nextDefaultModel = value || defaultImageModel
+
+      setModel((currentModel) => {
+        if (!currentModel.trim() || currentModel === settings.defaultModel) {
+          return nextDefaultModel
+        }
+
+        return currentModel
+      })
+
+      return {
+        ...settings,
+        defaultModel: value,
+      }
+    })
+  }
+
+  function handleClearSettings() {
+    window.localStorage.removeItem(providerSettingsStorageKey)
+    setProviderSettings({
+      apiKey: "",
+      baseURL: "",
+      defaultModel: defaultImageModel,
+    })
+    setModel(defaultImageModel)
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const trimmedApiKey = apiKey.trim()
+    const trimmedBaseURL = baseURL.trim()
+    const trimmedModel = model.trim()
+
+    if (!trimmedApiKey) {
+      toast.error("Enter your API key in provider settings.")
+      return
+    }
+
+    if (!trimmedModel) {
+      toast.error("Enter an image model.")
+      return
+    }
+
+    if (trimmedBaseURL) {
+      try {
+        new URL(trimmedBaseURL)
+      } catch {
+        toast.error("Base URL must be a valid URL.")
+        return
+      }
+    }
+
     setImage("")
     setRevisedPrompt("")
     setIsGenerating(true)
@@ -63,7 +177,14 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, model, size, quality }),
+        body: JSON.stringify({
+          prompt,
+          model: trimmedModel,
+          size,
+          quality,
+          apiKey: trimmedApiKey,
+          baseURL: trimmedBaseURL,
+        }),
       })
       const data = (await response.json()) as GenerateResponse
 
@@ -72,7 +193,7 @@ export default function Home() {
       }
 
       setImage(data.image || "")
-      setUsedModel(data.model || model)
+      setUsedModel(data.model || trimmedModel)
       setRevisedPrompt(data.revisedPrompt || "")
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "Image generation failed."
@@ -84,6 +205,103 @@ export default function Home() {
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pt-8 sm:px-8 lg:px-10">
+      <div className="relative flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
+          aria-expanded={isSettingsOpen}
+          aria-controls="provider-settings-panel"
+        >
+          <Settings />
+          Settings
+        </Button>
+        {isSettingsOpen ? (
+          <div
+            id="provider-settings-panel"
+            className="absolute right-0 top-11 z-20 w-[min(360px,calc(100vw-2.5rem))] space-y-4 rounded-lg border border-border bg-card p-5 shadow-card"
+          >
+            <div>
+              <h2 className="text-sm font-semibold text-ink">
+                Provider settings
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-steel">
+                Provider credentials are saved locally in this browser.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="api-key"
+                className="text-micro-uppercase text-steel"
+              >
+                API Key
+              </Label>
+              <Input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(event) => updateProviderSetting("apiKey", event.target.value)}
+                placeholder="sk-..."
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="base-url"
+                className="text-micro-uppercase text-steel"
+              >
+                Base URL
+              </Label>
+              <Input
+                id="base-url"
+                value={baseURL}
+                onChange={(event) => updateProviderSetting("baseURL", event.target.value)}
+                placeholder="Leave blank for OpenAI default"
+                autoComplete="off"
+              />
+              <p className="text-[13px] leading-5 text-steel">
+                Optional. Only use a trusted provider endpoint.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="default-model"
+                className="text-micro-uppercase text-steel"
+              >
+                Default model
+              </Label>
+              <Input
+                id="default-model"
+                value={defaultModel}
+                onChange={(event) => handleDefaultModelChange(event.target.value)}
+                placeholder={defaultImageModel}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSettings}
+              >
+                Clear saved settings
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
       <section className="grid gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
           <div
@@ -137,7 +355,7 @@ export default function Home() {
         >
           <StatTile tone="lavender" label="Model" value="Editable" />
           <StatTile tone="peach" label="Output" value="Base64 / URL" />
-          <StatTile tone="mint" label="API Key" value="Server only" />
+          <StatTile tone="mint" label="API Key" value="Stored locally" />
           <StatTile tone="sky" label="Latency" value="≈ 6–12s" />
         </div>
       </section>
@@ -157,12 +375,12 @@ export default function Home() {
                   Generate<span className="text-primary">.</span>
                 </CardTitle>
                 <CardDescription className="mt-2">
-                  Keep provider credentials on the server. Override the image
-                  model per request when needed.
+                  Store provider settings in this browser and send credentials
+                  only when generating an image.
                 </CardDescription>
               </div>
               <div className="rounded-md border border-border bg-card p-2 shadow-subtle">
-                <SlidersHorizontal className="h-4 w-4 text-primary" />
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
             </div>
           </CardHeader>
@@ -187,8 +405,8 @@ export default function Home() {
                   placeholder="gpt-image-1 or gpt-image-2"
                 />
                 <p className="text-[13px] leading-5 text-steel">
-                  Aligns with your provider model name. Server falls back to
-                  IMAGE_MODEL.
+                  Prefilled from your default model setting. Override it for
+                  this request when needed.
                 </p>
               </div>
 
@@ -307,8 +525,8 @@ export default function Home() {
                     Ready for a prompt
                   </h2>
                   <p className="mt-2 text-[13px] leading-6 text-steel">
-                    Configure the request and generate an image. Missing API
-                    credentials are reported inline without exposing secrets.
+                    Configure the request and generate an image. Missing
+                    credentials are reported without exposing secrets.
                   </p>
                 </div>
               )}

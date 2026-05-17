@@ -7,6 +7,8 @@ type GenerateRequest = {
   model?: unknown
   size?: unknown
   quality?: unknown
+  apiKey?: unknown
+  baseURL?: unknown
 }
 
 const sizes = new Set(["1024x1024", "1024x1536", "1536x1024", "auto"])
@@ -17,13 +19,6 @@ function getString(value: unknown) {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.OPENAI_API_KEY) {
-    return Response.json(
-      { error: "Missing OPENAI_API_KEY. Add it to .env.local before generating images." },
-      { status: 500 },
-    )
-  }
-
   let body: GenerateRequest
 
   try {
@@ -32,10 +27,24 @@ export async function POST(request: Request) {
     return Response.json({ error: "Request body must be valid JSON." }, { status: 400 })
   }
 
+  const apiKey = getString(body.apiKey)
+  const baseURL = getString(body.baseURL)
   const prompt = getString(body.prompt)
-  const model = getString(body.model) || process.env.IMAGE_MODEL || "gpt-image-2"
+  const model = getString(body.model) || "gpt-image-2"
   const size = getString(body.size) || "1024x1024"
   const quality = getString(body.quality) || "auto"
+
+  if (!apiKey) {
+    return Response.json({ error: "Enter your API key in provider settings." }, { status: 400 })
+  }
+
+  if (baseURL) {
+    try {
+      new URL(baseURL)
+    } catch {
+      return Response.json({ error: "Base URL must be a valid URL." }, { status: 400 })
+    }
+  }
 
   if (!prompt) {
     return Response.json({ error: "Enter an image prompt." }, { status: 400 })
@@ -55,8 +64,8 @@ export async function POST(request: Request) {
 
   try {
     const client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      baseURL: process.env.OPENAI_BASE_URL || undefined,
+      apiKey,
+      baseURL: baseURL || undefined,
     })
     const response = await client.images.generate({
       model,
@@ -87,19 +96,13 @@ export async function POST(request: Request) {
       typeof error === "object" && error && "status" in error && Number.isInteger(Number(error.status))
         ? Number((error as { status: number }).status)
         : 502
-    const errorBody =
-      typeof error === "object" && error && "error" in error
-        ? (error as { error: unknown }).error
-        : undefined
     const message = error instanceof Error ? error.message : "Image generation failed."
 
     console.error("[/api/generate] image generation failed", {
       status,
       message,
       model,
-      baseURL: process.env.OPENAI_BASE_URL || "(default)",
-      errorBody,
-      error,
+      hasCustomBaseURL: Boolean(baseURL),
     })
 
     return Response.json(
