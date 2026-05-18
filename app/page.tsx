@@ -2,8 +2,9 @@
 
 import Image from "next/image"
 import * as React from "react"
-import { ImageIcon, Loader2, Settings, Sparkles } from "lucide-react"
+import { Loader2, Settings, Sparkles } from "lucide-react";
 import { toast } from "sonner"
+import { Dialog } from "@base-ui/react/dialog"
 
 import { ImageSelect } from "@/components/image-select"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,12 @@ const qualityOptions = [
   { label: "Medium", value: "medium" },
   { label: "High", value: "high" },
 ]
+
+const modelOptions = [
+  { label: "gpt-image-1", value: "gpt-image-1" },
+  { label: "gpt-image-2", value: "gpt-image-2" },
+  { label: "dall-e-3", value: "dall-e-3" },
+];
 
 type ProviderSettings = {
   apiKey: string
@@ -205,102 +212,111 @@ export default function Home() {
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pt-8 sm:px-8 lg:px-10">
-      <div className="relative flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setIsSettingsOpen((isOpen) => !isOpen)}
-          aria-expanded={isSettingsOpen}
-          aria-controls="provider-settings-panel"
-        >
-          <Settings />
-          Settings
-        </Button>
-        {isSettingsOpen ? (
-          <div
-            id="provider-settings-panel"
-            className="absolute right-0 top-11 z-20 w-[min(360px,calc(100vw-2.5rem))] space-y-4 rounded-lg border border-border bg-card p-5 shadow-card"
+      <div className="flex justify-end">
+        <Dialog.Root open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <Dialog.Trigger
+            render={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label="Open provider settings"
+              />
+            }
           >
-            <div>
-              <h2 className="text-sm font-semibold text-ink">
-                Provider settings
-              </h2>
-              <p className="mt-1 text-[13px] leading-5 text-steel">
-                Provider credentials are saved locally in this browser.
-              </p>
-            </div>
+            <Settings />
+          </Dialog.Trigger>
+          <Dialog.Portal>
+            <Dialog.Backdrop className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm transition-opacity duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
+            <Dialog.Popup
+              className="fixed right-0 top-0 z-50 flex h-dvh w-[min(420px,100vw)] flex-col gap-5 border-l border-border bg-card p-6 shadow-modal outline-none transition-transform duration-300 ease-out data-ending-style:translate-x-full data-starting-style:translate-x-full"
+            >
+              <div className="space-y-1">
+                <Dialog.Title className="text-base font-semibold text-ink">
+                  Provider settings
+                </Dialog.Title>
+                <Dialog.Description className="text-[13px] leading-5 text-steel">
+                  Provider credentials are saved locally in this browser.
+                </Dialog.Description>
+              </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="api-key"
-                className="text-micro-uppercase text-steel"
-              >
-                API Key
-              </Label>
-              <Input
-                id="api-key"
-                type="password"
-                value={apiKey}
-                onChange={(event) => updateProviderSetting("apiKey", event.target.value)}
-                placeholder="sk-..."
-                autoComplete="off"
-              />
-            </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="api-key"
+                    className="text-micro-uppercase text-steel"
+                  >
+                    API Key
+                  </Label>
+                  <Input
+                    id="api-key"
+                    type="password"
+                    value={apiKey}
+                    onChange={(event) =>
+                      updateProviderSetting("apiKey", event.target.value)
+                    }
+                    placeholder="sk-..."
+                    autoComplete="off"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="base-url"
-                className="text-micro-uppercase text-steel"
-              >
-                Base URL
-              </Label>
-              <Input
-                id="base-url"
-                value={baseURL}
-                onChange={(event) => updateProviderSetting("baseURL", event.target.value)}
-                placeholder="Leave blank for OpenAI default"
-                autoComplete="off"
-              />
-              <p className="text-[13px] leading-5 text-steel">
-                Optional. Only use a trusted provider endpoint.
-              </p>
-            </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="base-url"
+                    className="text-micro-uppercase text-steel"
+                  >
+                    Base URL
+                  </Label>
+                  <Input
+                    id="base-url"
+                    value={baseURL}
+                    onChange={(event) =>
+                      updateProviderSetting("baseURL", event.target.value)
+                    }
+                    placeholder="Leave blank for OpenAI default"
+                    autoComplete="off"
+                  />
+                  <p className="text-[13px] leading-5 text-steel">
+                    Optional. Only use a trusted provider endpoint.
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="default-model"
-                className="text-micro-uppercase text-steel"
-              >
-                Default model
-              </Label>
-              <Input
-                id="default-model"
-                value={defaultModel}
-                onChange={(event) => handleDefaultModelChange(event.target.value)}
-                placeholder={defaultImageModel}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="default-model"
+                    className="text-micro-uppercase text-steel"
+                  >
+                    Default model
+                  </Label>
+                  <Input
+                    id="default-model"
+                    value={defaultModel}
+                    onChange={(event) =>
+                      handleDefaultModelChange(event.target.value)
+                    }
+                    placeholder={defaultImageModel}
+                  />
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleClearSettings}
-              >
-                Clear saved settings
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setIsSettingsOpen(false)}
-              >
-                Done
-              </Button>
-            </div>
-          </div>
-        ) : null}
+              <div className="mt-auto flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearSettings}
+                >
+                  Clear
+                </Button>
+                <Dialog.Close
+                  render={<Button type="button" size="sm" />}
+                >
+                  Done
+                </Dialog.Close>
+              </div>
+            </Dialog.Popup>
+          </Dialog.Portal>
+        </Dialog.Root>
       </div>
       <section className="grid gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
@@ -371,9 +387,7 @@ export default function Home() {
           <CardHeader className="border-b border-hairline-soft bg-tint-cream/50 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <CardTitle>
-                  Generate<span className="text-primary">.</span>
-                </CardTitle>
+                <CardTitle>Generate</CardTitle>
                 <CardDescription className="mt-2">
                   Store provider settings in this browser and send credentials
                   only when generating an image.
@@ -387,22 +401,12 @@ export default function Home() {
           <CardContent className="p-6">
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <Label
-                    htmlFor="model"
-                    className="text-micro-uppercase text-steel"
-                  >
-                    Model
-                  </Label>
-                  <span className="rounded-xs bg-tint-lavender px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-brand-purple-800">
-                    Request scope
-                  </span>
-                </div>
-                <Input
-                  id="model"
+                <Label className="text-micro-uppercase text-steel">Model</Label>
+                <ImageSelect
+                  ariaLabel="Select image model"
                   value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  placeholder="gpt-image-1 or gpt-image-2"
+                  onValueChange={setModel}
+                  options={modelOptions}
                 />
                 <p className="text-[13px] leading-5 text-steel">
                   Prefilled from your default model setting. Override it for
@@ -516,19 +520,14 @@ export default function Home() {
                   className="max-h-170 w-full rounded-lg object-contain shadow-mockup"
                 />
               ) : (
-                <div className="mx-auto max-w-sm text-center">
-                  <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-card shadow-subtle">
-                    <span className="absolute inset-0 -z-10 rounded-lg bg-[radial-gradient(circle,rgba(86,69,212,0.18),transparent_70%)] blur-xl" />
-                    <ImageIcon className="h-7 w-7 text-stone animate-float-soft" />
-                  </div>
-                  <h2 className="mt-4 text-heading-5 text-ink">
-                    Ready for a prompt
-                  </h2>
-                  <p className="mt-2 text-[13px] leading-6 text-steel">
-                    Configure the request and generate an image. Missing
-                    credentials are reported without exposing secrets.
-                  </p>
-                </div>
+                <Image
+                  src="/warm-desk.png"
+                  alt="A warm minimal desk workspace preview"
+                  width={1536}
+                  height={1536}
+                  priority
+                  className="max-h-170 w-full rounded-lg object-contain shadow-mockup"
+                />
               )}
             </div>
 
@@ -540,7 +539,9 @@ export default function Home() {
                 </div>
                 {revisedPrompt ? (
                   <div>
-                    <span className="font-semibold text-ink">Revised prompt: </span>
+                    <span className="font-semibold text-ink">
+                      Revised prompt:{" "}
+                    </span>
                     <span className="text-slate">{revisedPrompt}</span>
                   </div>
                 ) : null}
