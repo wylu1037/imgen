@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import * as React from "react"
-import { Loader2, Settings, Sparkles } from "lucide-react";
+import { Dices, Loader2, Settings, Sparkles } from "lucide-react";
 import { toast } from "sonner"
 import { Dialog } from "@base-ui/react/dialog"
 
@@ -41,6 +41,25 @@ const modelOptions = [
   { label: "gpt-image-2", value: "gpt-image-2" },
   { label: "dall-e-3", value: "dall-e-3" },
 ];
+
+const samplePrompts = [
+  "A warm minimal desk workspace for AI image generation, Notion-inspired product design, soft surfaces, editorial lighting",
+  "Studio photograph of a ceramic pour-over coffee setup, morning light, shallow depth of field, beige linen backdrop",
+  "Portrait of a thoughtful young woman in a tailored wool coat, soft overcast light, 35mm film grain, muted earth tones",
+  "Misty alpine valley at golden hour, layered ridgelines, cinematic wide shot, low contrast, painterly atmosphere",
+  "Floating crystalline sculpture in zero gravity, refracted rainbow light, dark obsidian backdrop, ultra-detailed concept art",
+  "Risograph illustration of a quiet bookstore on a rainy afternoon, limited palette of coral and indigo, grainy texture",
+  "Sun-drenched mid-century living room with a Noguchi lamp and travertine coffee table, architectural digest editorial",
+  "Macro shot of dew on a cobalt-blue dahlia, hyperreal detail, soft natural light, neutral cream background",
+  "Cyberpunk night market in rain-slicked Tokyo alley, neon signage reflected in puddles, anamorphic lens flare",
+  "Children's storybook illustration of a tiny astronaut planting flowers on a pastel-colored moon, gouache style",
+]
+
+function pickRandomPrompt(currentPrompt: string): string {
+  const candidates = samplePrompts.filter((sample) => sample !== currentPrompt)
+  const pool = candidates.length > 0 ? candidates : samplePrompts
+  return pool[Math.floor(Math.random() * pool.length)]
+}
 
 type ProviderSettings = {
   apiKey: string
@@ -453,10 +472,22 @@ export default function Home() {
                   >
                     Prompt
                   </Label>
-                  <span className="text-[11px] tabular-nums text-steel">
-                    {prompt.length}
-                    <span className="text-stone">/4000</span>
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 px-0 text-steel hover:text-ink"
+                      onClick={() => setPrompt((current) => pickRandomPrompt(current))}
+                      aria-label="Pick a random prompt"
+                    >
+                      <Dices />
+                    </Button>
+                    <span className="text-[11px] tabular-nums text-steel">
+                      {prompt.length}
+                      <span className="text-stone">/4000</span>
+                    </span>
+                  </div>
                 </div>
                 <Textarea
                   id="prompt"
