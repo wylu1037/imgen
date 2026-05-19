@@ -17,6 +17,7 @@ type MessageListProps = {
   pendingTurn: PendingTurn | null
   isEmpty: boolean
   onPickSample: (prompt: string) => void
+  onEditPrompt: (prompt: string) => void
   scrollTargetTurnId: string | null
   onScrollHandled: () => void
 }
@@ -26,6 +27,7 @@ export function MessageList({
   pendingTurn,
   isEmpty,
   onPickSample,
+  onEditPrompt,
   scrollTargetTurnId,
   onScrollHandled,
 }: MessageListProps) {
@@ -73,7 +75,7 @@ export function MessageList({
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         {messages.map((message) =>
           message.role === "user" ? (
-            <UserBubble key={message.id} message={message} />
+            <UserBubble key={message.id} message={message} onEdit={onEditPrompt} />
           ) : (
             <AssistantBubble key={message.id} message={message} />
           ),

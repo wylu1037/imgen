@@ -1,4 +1,4 @@
-import type { ChatMessage, NewChatMessage } from "./types"
+import type { ChatMessage, NewChatMessage, ProviderConfig } from "./types"
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS messages (
@@ -16,16 +16,42 @@ const SCHEMA_SQL = `
   );
   CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
   CREATE INDEX IF NOT EXISTS idx_messages_turn ON messages(turn_id);
-  PRAGMA user_version = 1;
+
+  CREATE TABLE IF NOT EXISTS providers (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL,
+    api_key       TEXT NOT NULL DEFAULT '',
+    base_url      TEXT NOT NULL DEFAULT '',
+    models_json   TEXT NOT NULL,
+    default_model TEXT NOT NULL,
+    notes         TEXT NOT NULL DEFAULT '',
+    created_at    INTEGER NOT NULL,
+    updated_at    INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_providers_updated_at ON providers(updated_at);
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
+  PRAGMA user_version = 2;
 `
 
 const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs"
+const ACTIVE_PROVIDER_KEY = "active_provider_id"
 
 export interface ChatDb {
   insert: (msg: NewChatMessage) => Promise<ChatMessage>
   loadAll: () => Promise<ChatMessage[]>
   deleteTurn: (turnId: string) => Promise<void>
   clearAll: () => Promise<void>
+  loadProviders: () => Promise<ProviderConfig[]>
+  upsertProvider: (provider: ProviderConfig) => Promise<void>
+  deleteProvider: (providerId: string) => Promise<void>
+  clearProviders: () => Promise<void>
+  loadActiveProviderId: () => Promise<string | null>
+  setActiveProviderId: (providerId: string | null) => Promise<void>
   close: () => Promise<void>
   readonly persistent: boolean
 }
@@ -37,6 +63,16 @@ type WorkerOutbound = {
   messageId?: string
   result?: unknown
   dbId?: string
+}
+
+type ExecResult = {
+  resultRows?: Row[]
+}
+
+type OpenResult = {
+  dbId?: string
+  vfs?: string
+  persistent?: boolean
 }
 
 type Pending = {
@@ -127,6 +163,62 @@ function rowToMessage(row: Row): ChatMessage {
   }
 }
 
+function rowToProvider(row: Row): ProviderConfig {
+  const models = parseModels(row.models_json)
+  const defaultModel = String(row.default_model || "").trim() || models[0] || ""
+
+  return {
+    id: String(row.id),
+    name: String(row.name || ""),
+    apiKey: String(row.api_key || ""),
+    baseURL: String(row.base_url || ""),
+    models,
+    defaultModel,
+    notes: String(row.notes || ""),
+    createdAt: toNumber(row.created_at),
+    updatedAt: toNumber(row.updated_at),
+  }
+}
+
+function parseModels(value: string | number | null): string[] {
+  if (typeof value !== "string") return []
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((model): model is string => typeof model === "string")
+      .map((model) => model.trim())
+      .filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+function toNumber(value: string | number | null): number {
+  return typeof value === "number" ? value : Number(value) || 0
+}
+
+function getResultRows(response: WorkerOutbound): Row[] {
+  const result = response.result as ExecResult | undefined
+  return Array.isArray(result?.resultRows) ? result.resultRows : []
+}
+
+async function selectRows(
+  promiser: Promiser,
+  dbId: string,
+  sql: string,
+  bind?: unknown[],
+): Promise<Row[]> {
+  const response = await promiser.send("exec", {
+    dbId,
+    sql,
+    bind,
+    rowMode: "object",
+    resultRows: [],
+  })
+  return getResultRows(response)
+}
+
 function generateId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID()
@@ -137,14 +229,14 @@ function generateId(): string {
 async function openDb(
   promiser: Promiser,
   filename: string,
-): Promise<{ dbId: string; vfs?: string }> {
+): Promise<{ dbId: string; vfs?: string; persistent?: boolean }> {
   const response = await promiser.send("open", { filename })
-  const result = response.result as { dbId?: string; vfs?: string } | undefined
+  const result = response.result as OpenResult | undefined
   const dbId = result?.dbId ?? response.dbId
   if (!dbId) {
     throw new Error("sqlite worker did not return a dbId")
   }
-  return { dbId, vfs: result?.vfs }
+  return { dbId, vfs: result?.vfs, persistent: result?.persistent }
 }
 
 export async function openChatDb(): Promise<ChatDb> {
@@ -166,7 +258,7 @@ export async function openChatDb(): Promise<ChatDb> {
     try {
       const opened = await openDb(promiser, "file:imgen.sqlite?vfs=opfs")
       dbId = opened.dbId
-      persistent = opened.vfs === "opfs"
+      persistent = opened.persistent === true
     } catch (err) {
       console.warn("[chat-db] OPFS open failed, falling back to :memory:", err)
       const opened = await openDb(promiser, ":memory:")
@@ -214,18 +306,16 @@ export async function openChatDb(): Promise<ChatDb> {
     },
 
     async loadAll() {
-      const resultRows: Row[] = []
-      await promiser.send("exec", {
+      const resultRows = await selectRows(
+        promiser,
         dbId,
-        sql: `
+        `
           SELECT id, turn_id, role, content, image_data,
                  model, size, quality, revised_prompt, error, created_at
           FROM messages
           ORDER BY created_at ASC, id ASC
         `,
-        rowMode: "object",
-        resultRows,
-      })
+      )
       return resultRows.map(rowToMessage)
     },
 
@@ -239,6 +329,101 @@ export async function openChatDb(): Promise<ChatDb> {
 
     async clearAll() {
       await promiser.send("exec", { dbId, sql: "DELETE FROM messages" })
+    },
+
+    async loadProviders() {
+      const resultRows = await selectRows(
+        promiser,
+        dbId,
+        `
+          SELECT id, name, api_key, base_url, models_json,
+                 default_model, notes, created_at, updated_at
+          FROM providers
+          ORDER BY updated_at DESC, created_at DESC, id ASC
+        `,
+      )
+      return resultRows.map(rowToProvider)
+    },
+
+    async upsertProvider(provider) {
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          INSERT INTO providers (
+            id, name, api_key, base_url, models_json,
+            default_model, notes, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            api_key = excluded.api_key,
+            base_url = excluded.base_url,
+            models_json = excluded.models_json,
+            default_model = excluded.default_model,
+            notes = excluded.notes,
+            updated_at = excluded.updated_at
+        `,
+        bind: [
+          provider.id,
+          provider.name,
+          provider.apiKey,
+          provider.baseURL,
+          JSON.stringify(provider.models),
+          provider.defaultModel,
+          provider.notes,
+          provider.createdAt,
+          provider.updatedAt,
+        ],
+      })
+    },
+
+    async deleteProvider(providerId) {
+      await promiser.send("exec", {
+        dbId,
+        sql: "DELETE FROM providers WHERE id = ?",
+        bind: [providerId],
+      })
+    },
+
+    async clearProviders() {
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM providers;
+          DELETE FROM app_settings WHERE key = '${ACTIVE_PROVIDER_KEY}';
+        `,
+      })
+    },
+
+    async loadActiveProviderId() {
+      const resultRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT value FROM app_settings WHERE key = ? LIMIT 1",
+        [ACTIVE_PROVIDER_KEY],
+      )
+      const value = resultRows[0]?.value
+      return typeof value === "string" && value.trim() ? value : null
+    },
+
+    async setActiveProviderId(providerId) {
+      if (!providerId) {
+        await promiser.send("exec", {
+          dbId,
+          sql: "DELETE FROM app_settings WHERE key = ?",
+          bind: [ACTIVE_PROVIDER_KEY],
+        })
+        return
+      }
+
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          INSERT INTO app_settings (key, value)
+          VALUES (?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        `,
+        bind: [ACTIVE_PROVIDER_KEY, providerId],
+      })
     },
 
     async close() {

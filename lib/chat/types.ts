@@ -1,6 +1,23 @@
 export type Role = "user" | "assistant"
 
+export type ProviderConfig = {
+  id: string
+  name: string
+  apiKey: string
+  baseURL: string
+  models: string[]
+  defaultModel: string
+  notes: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type ProviderSettings = {
+  activeProviderId: string | null
+  providers: ProviderConfig[]
+}
+
+export type LegacyProviderSettings = {
   apiKey: string
   baseURL: string
   defaultModel: string

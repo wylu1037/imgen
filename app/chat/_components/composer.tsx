@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
-  modelOptions,
   pickRandomPrompt,
   qualityOptions,
   sizeOptions,
+  type OptionItem,
 } from "@/lib/chat/constants"
 
 import { ParamChip } from "./param-chip"
@@ -20,6 +20,7 @@ type ComposerProps = {
   draft: string
   onDraftChange: (next: string) => void
   model: string
+  modelOptions: OptionItem[]
   onModelChange: (next: string) => void
   size: string
   onSizeChange: (next: string) => void
@@ -34,6 +35,7 @@ export function Composer({
   draft,
   onDraftChange,
   model,
+  modelOptions,
   onModelChange,
   size,
   onSizeChange,

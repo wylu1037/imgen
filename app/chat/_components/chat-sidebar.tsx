@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ImageIcon, Settings, Sparkles, Trash2 } from "lucide-react"
+import { ImageIcon, Settings, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { groupUserTurnsByTime, summarizeTurn } from "@/lib/chat/grouping"
-import type { ChatMessage, ProviderSettings } from "@/lib/chat/types"
+import type { ChatMessage, ProviderConfig } from "@/lib/chat/types"
 
 import { SettingsDialog } from "./settings-dialog"
 
@@ -28,9 +28,12 @@ type ChatSidebarProps = {
   messages: ChatMessage[]
   selectedTurnId: string | null
   onSelectTurn: (turnId: string) => void
-  settings: ProviderSettings
-  onUpdateField: (key: keyof ProviderSettings, value: string) => void
-  onClearSettings: () => void
+  providers: ProviderConfig[]
+  activeProviderId: string | null
+  onSelectProvider: (providerId: string) => void
+  onCreateProvider: () => ProviderConfig
+  onSaveProvider: (provider: ProviderConfig) => void
+  onDeleteProvider: (providerId: string) => void
   onClearChat: () => void
   hasMessages: boolean
 }
@@ -39,9 +42,12 @@ export function ChatSidebar({
   messages,
   selectedTurnId,
   onSelectTurn,
-  settings,
-  onUpdateField,
-  onClearSettings,
+  providers,
+  activeProviderId,
+  onSelectProvider,
+  onCreateProvider,
+  onSaveProvider,
+  onDeleteProvider,
   onClearChat,
   hasMessages,
 }: ChatSidebarProps) {
@@ -60,16 +66,17 @@ export function ChatSidebar({
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="border-b border-hairline-soft">
+      <SidebarHeader className="border-hairline-soft">
         <Link
           href="/"
           className="inline-flex items-center gap-2 px-2 py-1 text-[14px] font-semibold text-ink"
         >
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-tint-lavender text-brand-purple-800">
-            <Sparkles className="h-3.5 w-3.5" />
+          <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-ink text-[11px] font-semibold tracking-[-0.04em] text-background shadow-subtle">
+            <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_18%,rgba(255,255,255,0.42),transparent_34%)]" />
+            <span className="relative">IM</span>
           </span>
           <span>
-            AI Image Workspace<span className="text-primary">.</span>
+            Imgen<span className="text-primary">.</span>
           </span>
         </Link>
       </SidebarHeader>
@@ -115,7 +122,7 @@ export function ChatSidebar({
         )}
       </SidebarContent>
 
-      <SidebarFooter className="gap-1 border-t border-hairline-soft">
+      <SidebarFooter className="gap-1 border-hairline-soft">
         {hasMessages ? (
           <Button
             type="button"
@@ -132,9 +139,12 @@ export function ChatSidebar({
         <SettingsDialog
           open={isSettingsOpen}
           onOpenChange={setIsSettingsOpen}
-          settings={settings}
-          onUpdateField={onUpdateField}
-          onClear={onClearSettings}
+          providers={providers}
+          activeProviderId={activeProviderId}
+          onSelectProvider={onSelectProvider}
+          onCreateProvider={onCreateProvider}
+          onSaveProvider={onSaveProvider}
+          onDeleteProvider={onDeleteProvider}
           trigger={
             <Button
               type="button"
@@ -150,5 +160,5 @@ export function ChatSidebar({
         />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

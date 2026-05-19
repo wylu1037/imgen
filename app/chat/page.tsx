@@ -8,7 +8,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { defaultImageModel } from "@/lib/chat/constants";
+import { defaultImageModel, type OptionItem } from "@/lib/chat/constants";
 import type { NewChatMessage } from "@/lib/chat/types";
 
 import { ChatSidebar } from "./_components/chat-sidebar";
@@ -37,9 +37,14 @@ function generateTurnId(): string {
 
 export default function ChatPage() {
   const {
-    settings,
-    updateField,
-    clearAll: clearSettings,
+    status: providerStatus,
+    providers,
+    activeProvider,
+    activeProviderId,
+    setActiveProviderId,
+    createProvider,
+    saveProvider,
+    deleteProvider,
   } = useProviderSettings();
   const {
     status: dbStatus,
@@ -50,9 +55,7 @@ export default function ChatPage() {
   } = useChatHistory();
 
   const [draft, setDraft] = React.useState("");
-  const [model, setModel] = React.useState(
-    () => settings.defaultModel || defaultImageModel,
-  );
+  const [model, setModel] = React.useState(defaultImageModel);
   const [size, setSize] = React.useState("1024x1024");
   const [quality, setQuality] = React.useState("auto");
   const [pendingTurn, setPendingTurn] = React.useState<PendingTurn | null>(
@@ -63,6 +66,19 @@ export default function ChatPage() {
   >(null);
   const isGenerating = pendingTurn !== null;
   const persistenceWarnedRef = React.useRef(false);
+  const providerModelOptions = React.useMemo<OptionItem[]>(() => {
+    const models = activeProvider?.models.length
+      ? activeProvider.models
+      : [activeProvider?.defaultModel || defaultImageModel]
+    return models.map((model) => ({ label: model, value: model }))
+  }, [activeProvider]);
+
+  const selectedModel = React.useMemo(() => {
+    if (!activeProvider) return model;
+    return activeProvider.models.includes(model)
+      ? model
+      : activeProvider.defaultModel || activeProvider.models[0] || defaultImageModel;
+  }, [activeProvider, model]);
 
   React.useEffect(() => {
     if (dbStatus !== "ready" || persistent || persistenceWarnedRef.current)
@@ -78,13 +94,15 @@ export default function ChatPage() {
     }
   }, [dbStatus]);
 
-  const isReady = dbStatus === "ready" || dbStatus === "error";
+  const isReady =
+    (dbStatus === "ready" || dbStatus === "error") &&
+    (providerStatus === "ready" || providerStatus === "error");
 
   async function handleSubmit() {
     const trimmedPrompt = draft.trim();
-    const trimmedApiKey = settings.apiKey.trim();
-    const trimmedBaseURL = settings.baseURL.trim();
-    const trimmedModel = model.trim();
+    const trimmedApiKey = activeProvider?.apiKey.trim() || "";
+    const trimmedBaseURL = activeProvider?.baseURL.trim() || "";
+    const trimmedModel = selectedModel.trim();
 
     if (!trimmedPrompt) return;
     if (!trimmedApiKey) {
@@ -200,9 +218,12 @@ export default function ChatPage() {
         messages={messages}
         selectedTurnId={scrollTargetTurnId}
         onSelectTurn={(turnId) => setScrollTargetTurnId(turnId)}
-        settings={settings}
-        onUpdateField={updateField}
-        onClearSettings={clearSettings}
+        providers={providers}
+        activeProviderId={activeProviderId}
+        onSelectProvider={setActiveProviderId}
+        onCreateProvider={createProvider}
+        onSaveProvider={saveProvider}
+        onDeleteProvider={deleteProvider}
         onClearChat={() => {
           void clearHistory();
         }}
@@ -218,6 +239,7 @@ export default function ChatPage() {
             pendingTurn={pendingTurn}
             isEmpty={messages.length === 0 && !pendingTurn}
             onPickSample={(prompt) => setDraft(prompt)}
+            onEditPrompt={(prompt) => setDraft(prompt)}
             scrollTargetTurnId={scrollTargetTurnId}
             onScrollHandled={handleScrollHandled}
           />
@@ -228,7 +250,8 @@ export default function ChatPage() {
             <Composer
               draft={draft}
               onDraftChange={setDraft}
-              model={model}
+              model={selectedModel}
+              modelOptions={providerModelOptions}
               onModelChange={setModel}
               size={size}
               onSizeChange={setSize}
