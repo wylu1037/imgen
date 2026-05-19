@@ -67,9 +67,44 @@ export function ChatSidebar({
           href="/"
           className="inline-flex items-center gap-2 px-2 py-1 text-[14px] font-semibold text-ink"
         >
-          <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-ink text-[11px] font-semibold tracking-[-0.04em] text-background shadow-subtle">
-            <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_18%,rgba(255,255,255,0.42),transparent_34%)]" />
-            <span className="relative">IM</span>
+          <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-ink shadow-subtle">
+            <svg
+              viewBox="0 0 180 180"
+              className="h-full w-full"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient
+                  id="imgen-mountain-far"
+                  x1="0.5"
+                  y1="0"
+                  x2="0.5"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#5A6068" />
+                  <stop offset="100%" stopColor="#1F2328" />
+                </linearGradient>
+                <linearGradient
+                  id="imgen-mountain-near"
+                  x1="0.5"
+                  y1="0"
+                  x2="0.5"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#9CA3AD" />
+                  <stop offset="100%" stopColor="#3A4148" />
+                </linearGradient>
+              </defs>
+              <circle cx="124" cy="58" r="14" fill="#F5C518" />
+              <path
+                d="M-4 152 L78 50 L138 152 Z"
+                fill="url(#imgen-mountain-far)"
+              />
+              <path
+                d="M70 152 L132 78 L184 152 Z"
+                fill="url(#imgen-mountain-near)"
+              />
+            </svg>
           </span>
           <span>
             Imgen<span className="text-primary">.</span>
