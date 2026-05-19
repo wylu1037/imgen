@@ -3,11 +3,15 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { defaultImageModel } from "@/lib/chat/constants";
 import type { NewChatMessage } from "@/lib/chat/types";
 
 import { ChatSidebar } from "./_components/chat-sidebar";
-import { ChatTopbar } from "./_components/chat-topbar";
 import { Composer } from "./_components/composer";
 import { MessageList } from "./_components/message-list";
 import type { PendingTurn } from "./_components/message-bubble";
@@ -54,7 +58,6 @@ export default function ChatPage() {
   const [pendingTurn, setPendingTurn] = React.useState<PendingTurn | null>(
     null,
   );
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [scrollTargetTurnId, setScrollTargetTurnId] = React.useState<
     string | null
   >(null);
@@ -192,67 +195,58 @@ export default function ChatPage() {
   }, []);
 
   return (
-    <div className="flex h-dvh bg-background">
+    <SidebarProvider className="h-dvh min-h-0">
       <ChatSidebar
         messages={messages}
         selectedTurnId={scrollTargetTurnId}
-        onSelectTurn={(turnId) => {
-          setScrollTargetTurnId(turnId);
-          setIsSidebarOpen(false);
+        onSelectTurn={(turnId) => setScrollTargetTurnId(turnId)}
+        settings={settings}
+        onUpdateField={updateField}
+        onClearSettings={clearSettings}
+        onClearChat={() => {
+          void clearHistory();
         }}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        hasMessages={messages.length > 0}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <ChatTopbar
-          settings={settings}
-          onUpdateField={updateField}
-          onClearSettings={clearSettings}
-          onClearChat={() => {
-            void clearHistory();
-          }}
-          hasMessages={messages.length > 0}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-        />
+      <SidebarInset className="overflow-hidden">
+        <SidebarTrigger className="absolute left-3 top-3 z-10" />
 
-        <main className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <MessageList
-              messages={messages}
-              pendingTurn={pendingTurn}
-              isEmpty={messages.length === 0 && !pendingTurn}
-              onPickSample={(prompt) => setDraft(prompt)}
-              scrollTargetTurnId={scrollTargetTurnId}
-              onScrollHandled={handleScrollHandled}
+        <div className="flex flex-1 flex-col overflow-hidden pt-12">
+          <MessageList
+            messages={messages}
+            pendingTurn={pendingTurn}
+            isEmpty={messages.length === 0 && !pendingTurn}
+            onPickSample={(prompt) => setDraft(prompt)}
+            scrollTargetTurnId={scrollTargetTurnId}
+            onScrollHandled={handleScrollHandled}
+          />
+        </div>
+
+        <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
+          <div className="mx-auto w-full max-w-2xl">
+            <Composer
+              draft={draft}
+              onDraftChange={setDraft}
+              model={model}
+              onModelChange={setModel}
+              size={size}
+              onSizeChange={setSize}
+              quality={quality}
+              onQualityChange={setQuality}
+              onSubmit={() => {
+                void handleSubmit();
+              }}
+              isGenerating={isGenerating}
+              isReady={isReady}
             />
+            <p className="mt-2 text-center text-[11px] text-stone">
+              Each prompt generates an independent image. Multi-turn editing is
+              not yet supported.
+            </p>
           </div>
-
-          <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
-            <div className="mx-auto w-full max-w-2xl">
-              <Composer
-                draft={draft}
-                onDraftChange={setDraft}
-                model={model}
-                onModelChange={setModel}
-                size={size}
-                onSizeChange={setSize}
-                quality={quality}
-                onQualityChange={setQuality}
-                onSubmit={() => {
-                  void handleSubmit();
-                }}
-                isGenerating={isGenerating}
-                isReady={isReady}
-              />
-              <p className="mt-2 text-center text-[11px] text-stone">
-                Each prompt generates an independent image. Multi-turn editing
-                is not yet supported.
-              </p>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
