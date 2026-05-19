@@ -231,7 +231,7 @@ export function useProviderSettings() {
     const provider = createProvider({ name: `Provider ${settings.providers.length + 1}` })
     const next = {
       activeProviderId: provider.id,
-      providers: [provider, ...settings.providers],
+      providers: [...settings.providers, provider],
     }
     replaceSettings(next)
     return provider

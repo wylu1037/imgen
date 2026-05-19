@@ -1,14 +1,44 @@
 "use client"
 
 import * as React from "react"
-import { Dialog } from "@base-ui/react/dialog"
-import { Select } from "@base-ui/react/select"
-import { Check, ChevronDown, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react"
+import {
+  Check,
+  Download,
+  Eye,
+  EyeOff,
+  Loader2,
+  Monitor,
+  Moon,
+  Palette,
+  Plug,
+  Plus,
+  RefreshCw,
+  Sun,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { useTheme, type Theme } from "@/hooks/use-theme"
 import { defaultImageModel } from "@/lib/chat/constants"
 import type { ProviderConfig } from "@/lib/chat/types"
 import { cn } from "@/lib/utils"
@@ -37,6 +67,17 @@ type ModelsResponse = {
   models?: string[]
   error?: string
 }
+
+type Section = "provider" | "appearance"
+
+const SECTIONS: Array<{
+  id: Section
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}> = [
+  { id: "provider", label: "Provider", icon: Plug },
+  { id: "appearance", label: "Appearance", icon: Palette },
+]
 
 function normalizeModels(models: string[]): string[] {
   return Array.from(new Set(models.map((model) => model.trim()).filter(Boolean)))
@@ -70,6 +111,7 @@ export function SettingsDialog({
     providers.find((provider) => provider.id === activeProviderId) ||
     providers[0] ||
     null
+  const [section, setSection] = React.useState<Section>("provider")
   const [draftState, setDraftState] = React.useState(() => ({
     providerId: activeProvider?.id ?? null,
     draft: activeProvider ? providerToDraft(activeProvider) : null,
@@ -143,8 +185,6 @@ export function SettingsDialog({
         throw new Error("The provider did not return any models.")
       }
 
-      console.log("[settings-dialog] loaded model ids", models)
-
       const defaultModel = models.includes(draft.defaultModel)
         ? draft.defaultModel
         : models[0]
@@ -188,294 +228,417 @@ export function SettingsDialog({
     : []
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Trigger render={trigger as React.ReactElement} />
-      <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm transition-opacity duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 grid w-[min(860px,calc(100vw-2rem))] max-h-[86vh] -translate-x-1/2 -translate-y-1/2 grid-cols-1 overflow-hidden rounded-xl border border-border bg-card shadow-modal outline-none transition-[opacity,transform] duration-200 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 md:grid-cols-[240px_1fr]">
-          <aside className="border-b border-hairline-soft bg-surface-soft/80 p-3 md:border-b-0 md:border-r">
-            <div className="px-2 pb-4 pt-1">
-              <Dialog.Title className="text-[13px] font-semibold text-ink">
-                Settings
-              </Dialog.Title>
-              <Dialog.Description className="mt-0.5 text-[12px] leading-4 text-steel">
-                Manage local chat configuration.
-              </Dialog.Description>
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        showCloseButton={false}
+        className="grid h-[min(620px,calc(100vh-4rem))] w-[min(820px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0 text-[12px] sm:max-w-none md:grid-cols-[200px_1fr]"
+      >
+        <aside className="border-b border-hairline-soft bg-surface-soft/80 p-2.5 md:border-b-0 md:border-r">
+          <div className="px-2 pb-3 pt-1">
+            <DialogTitle className="text-[12px] font-semibold text-ink">
+              Settings
+            </DialogTitle>
+            <DialogDescription className="mt-0.5 text-[11px] leading-4 text-steel">
+              Manage chat configuration.
+            </DialogDescription>
+          </div>
 
-            <nav aria-label="Settings sections" className="space-y-1">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between rounded-lg bg-tint-lavender px-3 py-2 text-left text-[13px] font-medium text-brand-purple-800 focus:outline-none focus:ring-[3px] focus:ring-primary/15"
-              >
-                <span>Provider</span>
-                <span className="rounded-full bg-card px-2 py-0.5 text-[11px] text-steel">
-                  {providers.length}
-                </span>
-              </button>
-            </nav>
-          </aside>
-
-          <div className="flex min-h-0 flex-col overflow-y-auto p-6">
-            <ScrollArea className="mb-5 max-h-46 pr-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {providers.map((provider) => {
-                  const isActive = provider.id === activeProviderId;
-                  const isSelected = provider.id === activeProvider?.id;
-
-                  return (
-                    <button
-                      key={provider.id}
-                      type="button"
-                      onClick={() => onSelectProvider(provider.id)}
-                      className={cn(
-                        "group rounded-lg border p-3 text-left transition-colors duration-150 ease-out",
-                        "hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-                        isSelected
-                          ? "border-primary/35 bg-tint-lavender"
-                          : "border-hairline-soft bg-card",
-                      )}
-                    >
-                      <span className="flex items-start justify-between gap-2">
-                        <span className="min-w-0">
-                          <span className="block truncate text-[13px] font-medium text-ink">
-                            {provider.name || "Untitled provider"}
-                          </span>
-                          <span className="mt-1 block truncate text-[12px] text-steel">
-                            {provider.defaultModel || defaultImageModel}
-                          </span>
-                        </span>
-                        <span className="flex shrink-0 items-center gap-1">
-                          {isActive ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                              <Check className="h-3 w-3" />
-                              Active
-                            </span>
-                          ) : null}
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Delete ${provider.name || "provider"}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onDeleteProvider(provider.id);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key !== "Enter" && event.key !== " ") return;
-                              event.preventDefault();
-                              event.stopPropagation();
-                              onDeleteProvider(provider.id);
-                            }}
-                            className={cn(
-                              "inline-flex h-7 w-7 items-center justify-center rounded-md text-steel opacity-0 transition-all duration-150 ease-out",
-                              "hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-                              "group-hover:opacity-100 group-focus-within:opacity-100",
-                              !canDelete && "pointer-events-none opacity-0",
-                            )}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </span>
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-
+          <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
+            {SECTIONS.map(({ id, label, icon: Icon }) => {
+              const isActive = section === id;
+              const count = id === "provider" ? providers.length : null;
+              return (
                 <button
+                  key={id}
                   type="button"
-                  onClick={handleCreateProvider}
+                  onClick={() => setSection(id)}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex min-h-21 items-center justify-center rounded-lg border border-dashed border-hairline-soft bg-card transition-colors duration-150 ease-out",
-                    "text-steel hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                    "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] font-medium transition-colors duration-150 ease-out focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                    isActive
+                      ? "bg-tint-lavender text-brand-purple-800"
+                      : "text-charcoal hover:bg-tint-gray",
                   )}
-                  aria-label="Add provider"
                 >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </ScrollArea>
-
-            <div className="mb-5 flex items-start justify-between gap-4 border-hairline-soft pt-5">
-              <div>
-                <h3 className="text-[13px] font-semibold text-ink">
-                  Provider details
-                </h3>
-                <p className="mt-1 text-[13px] leading-5 text-steel">
-                  Credentials stay in this browser. SQLite storage is local, not
-                  encrypted.
-                </p>
-              </div>
-            </div>
-
-            {activeProvider && draft ? (
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="provider-name"
-                    className="text-micro-uppercase text-steel"
-                  >
-                    Name
-                  </Label>
-                  <Input
-                    id="provider-name"
-                    value={draft.name}
-                    onChange={(event) =>
-                      updateDraft("name", event.target.value)
-                    }
-                    placeholder="OpenAI"
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="api-key"
-                    className="text-micro-uppercase text-steel"
-                  >
-                    API Key
-                  </Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    value={draft.apiKey}
-                    onChange={(event) =>
-                      updateDraft("apiKey", event.target.value)
-                    }
-                    placeholder="sk-..."
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="base-url"
-                    className="text-micro-uppercase text-steel"
-                  >
-                    Base URL
-                  </Label>
-                  <Input
-                    id="base-url"
-                    value={draft.baseURL}
-                    onChange={(event) =>
-                      updateDraft("baseURL", event.target.value)
-                    }
-                    placeholder="Leave blank for OpenAI default"
-                    autoComplete="off"
-                  />
-                  <p className="text-[13px] leading-5 text-steel">
-                    Optional. Only use a trusted provider endpoint.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label
-                      htmlFor="default-model"
-                      className="text-micro-uppercase text-steel"
-                    >
-                      Model
-                    </Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        void handleLoadModels();
-                      }}
-                      disabled={modelsStatus === "loading"}
-                      className="h-8 text-[12px] text-steel"
-                    >
-                      {modelsStatus === "loading" ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      )}
-                      Load models
-                    </Button>
-                  </div>
-
-                  <Select.Root
-                    value={draft.defaultModel}
-                    onValueChange={(next) => {
-                      if (next) updateDraft("defaultModel", next);
-                    }}
-                  >
-                    <Select.Trigger
-                      id="default-model"
-                      aria-label="Model"
+                  <Icon className="size-3.5 shrink-0" />
+                  <span className="flex-1">{label}</span>
+                  {count !== null ? (
+                    <span
                       className={cn(
-                        "flex h-10 w-full items-center justify-between gap-2 rounded-md border border-hairline-strong bg-card px-3 text-left text-sm text-ink",
-                        "transition-all duration-150 ease-out focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/15 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+                        "rounded-full px-1.5 py-0.5 text-[10px]",
+                        isActive
+                          ? "bg-card text-steel"
+                          : "bg-tint-gray text-steel",
                       )}
                     >
-                      <Select.Value>
-                        <span className="truncate font-medium">
-                          {draft.defaultModel || "Load models first"}
-                        </span>
-                      </Select.Value>
-                      <Select.Icon>
-                        <ChevronDown className="h-4 w-4 shrink-0 text-stone" />
-                      </Select.Icon>
-                    </Select.Trigger>
-                    <Select.Portal>
-                      <Select.Positioner
-                        sideOffset={6}
-                        className="z-50 outline-none"
-                      >
-                        <Select.Popup className="max-h-72 min-w-(--anchor-width) overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-modal outline-none">
-                          {modelOptions.map((model) => (
-                            <Select.Item
-                              key={model}
-                              value={model}
-                              className={cn(
-                                "grid cursor-default select-none grid-cols-[0.875rem_1fr] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none",
-                                "data-highlighted:bg-secondary data-highlighted:text-ink",
-                              )}
-                            >
-                              <span className="flex h-3.5 w-3.5 items-center justify-center text-primary">
-                                <Select.ItemIndicator>
-                                  <Check className="h-3.5 w-3.5" />
-                                </Select.ItemIndicator>
-                              </span>
-                              <Select.ItemText>
-                                <span className="font-medium text-ink">
-                                  {model}
-                                </span>
-                              </Select.ItemText>
-                            </Select.Item>
-                          ))}
-                        </Select.Popup>
-                      </Select.Positioner>
-                    </Select.Portal>
-                  </Select.Root>
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-                  {modelsError ? (
-                    <p className="text-[13px] leading-5 text-destructive">
-                      {modelsError}
-                    </p>
-                  ) : (
-                    <p className="text-[13px] leading-5 text-steel">
-                      Load models from the provider endpoint, then choose the
-                      image model.
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : null}
+        <div className="flex min-h-0 flex-col">
+          <ScrollArea className="flex-1">
+            <div className="p-5">
+              {section === "provider" ? (
+                <ProviderSection
+                  providers={providers}
+                  activeProvider={activeProvider}
+                  activeProviderId={activeProviderId}
+                  canDelete={canDelete}
+                  draft={draft}
+                  modelOptions={modelOptions}
+                  modelsStatus={modelsStatus}
+                  modelsError={modelsError}
+                  onSelectProvider={onSelectProvider}
+                  onCreateProvider={handleCreateProvider}
+                  onDeleteProvider={onDeleteProvider}
+                  onUpdateDraft={updateDraft}
+                  onLoadModels={handleLoadModels}
+                />
+              ) : (
+                <AppearanceSection />
+              )}
+            </div>
+          </ScrollArea>
 
-            <div className="mt-6 flex items-center justify-end gap-2 border-hairline-soft pt-4">
-                  <Dialog.Close
-                    render={<Button type="button" variant="ghost" size="sm" />}
-                  >
-                    Cancel
-                  </Dialog.Close>
-              <Button type="button" size="sm" onClick={handleSave}>
+          <DialogFooter className="flex items-center justify-end gap-2 border-t border-hairline-soft bg-card px-5 py-3">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 text-[12px]"
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            {section === "provider" ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSave}
+                className="h-8 text-[12px]"
+              >
                 Save
               </Button>
+            ) : null}
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type ProviderSectionProps = {
+  providers: ProviderConfig[]
+  activeProvider: ProviderConfig | null
+  activeProviderId: string | null
+  canDelete: boolean
+  draft: ProviderDraft | null
+  modelOptions: string[]
+  modelsStatus: "idle" | "loading" | "error"
+  modelsError: string
+  onSelectProvider: (providerId: string) => void
+  onCreateProvider: () => void
+  onDeleteProvider: (providerId: string) => void
+  onUpdateDraft: (key: keyof ProviderDraft, value: string | string[]) => void
+  onLoadModels: () => void
+}
+
+function ProviderSection({
+  providers,
+  activeProvider,
+  activeProviderId,
+  canDelete,
+  draft,
+  modelOptions,
+  modelsStatus,
+  modelsError,
+  onSelectProvider,
+  onCreateProvider,
+  onDeleteProvider,
+  onUpdateDraft,
+  onLoadModels,
+}: ProviderSectionProps) {
+  const [showApiKey, setShowApiKey] = React.useState(false)
+  return (
+    <>
+      <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          {providers.map((provider) => {
+            const isActive = provider.id === activeProviderId;
+            const isSelected = provider.id === activeProvider?.id;
+
+            return (
+              <button
+                key={provider.id}
+                type="button"
+                onClick={() => onSelectProvider(provider.id)}
+                className={cn(
+                  "group relative min-h-18 rounded-lg border p-2.5 text-left transition-colors duration-150 ease-out",
+                  "hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                  isSelected
+                    ? "border-primary/35 bg-tint-lavender"
+                    : "border-hairline-soft bg-card",
+                )}
+              >
+                {isActive ? (
+                  <span
+                    aria-label="Active"
+                    className="absolute right-2 top-2 flex size-1.5"
+                  >
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+                  </span>
+                ) : null}
+                <span className="flex items-center justify-between gap-2">
+                  <span className="min-w-0">
+                    <span className="block truncate text-[12px] font-medium text-ink">
+                      {provider.name || "Untitled provider"}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11px] text-steel">
+                      {provider.defaultModel || defaultImageModel}
+                    </span>
+                  </span>
+                  {canDelete ? (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Delete ${provider.name || "provider"}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDeleteProvider(provider.id);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onDeleteProvider(provider.id);
+                      }}
+                      className={cn(
+                        "pointer-events-none inline-flex h-6 w-0 shrink-0 items-center justify-center overflow-hidden rounded-md text-steel opacity-0",
+                        "transition-[width,opacity,margin] duration-200 ease-out",
+                        "group-hover:pointer-events-auto group-hover:w-6 group-hover:opacity-100",
+                        "group-focus-within:pointer-events-auto group-focus-within:w-6 group-focus-within:opacity-100",
+                        "hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                      )}
+                    >
+                      <Trash2 className="size-3 shrink-0" />
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={onCreateProvider}
+            className={cn(
+              "flex min-h-18 items-center justify-center rounded-lg border border-dashed border-hairline-soft bg-card transition-colors duration-150 ease-out",
+              "text-steel hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+            )}
+            aria-label="Add provider"
+          >
+            <Plus className="size-3.5" />
+          </button>
+        </div>
+
+      <div className="mb-4 flex items-start justify-between gap-4 border-hairline-soft pt-4">
+        <div>
+          <h3 className="text-[12px] font-semibold text-ink">
+            Provider details
+          </h3>
+          <p className="mt-0.5 text-[11px] leading-4 text-steel">
+            Credentials stay in this browser. SQLite storage is local, not
+            encrypted.
+          </p>
+        </div>
+      </div>
+
+      {activeProvider && draft ? (
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor="provider-name"
+              className="text-[11px] font-medium tracking-wide text-steel"
+            >
+              Name
+            </Label>
+            <Input
+              id="provider-name"
+              value={draft.name}
+              onChange={(event) => onUpdateDraft("name", event.target.value)}
+              placeholder="OpenAI"
+              autoComplete="off"
+              className="h-9 px-3 text-[13px] md:text-[12px]"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor="api-key"
+              className="text-[11px] font-medium tracking-wide text-steel"
+            >
+              API Key
+            </Label>
+            <div className="relative">
+              <Input
+                id="api-key"
+                type={showApiKey ? "text" : "password"}
+                value={draft.apiKey}
+                onChange={(event) => onUpdateDraft("apiKey", event.target.value)}
+                placeholder="sk-..."
+                autoComplete="off"
+                className="h-9 pl-3 pr-9 text-[13px] md:text-[12px]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((prev) => !prev)}
+                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                aria-pressed={showApiKey}
+                className="absolute right-1 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-steel transition-colors duration-150 ease-out hover:bg-tint-gray hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-primary/15"
+              >
+                {showApiKey ? (
+                  <EyeOff className="size-3.5" />
+                ) : (
+                  <Eye className="size-3.5" />
+                )}
+              </button>
             </div>
           </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor="base-url"
+              className="text-[11px] font-medium tracking-wide text-steel"
+            >
+              Base URL
+            </Label>
+            <Input
+              id="base-url"
+              value={draft.baseURL}
+              onChange={(event) => onUpdateDraft("baseURL", event.target.value)}
+              placeholder="Leave blank for OpenAI default"
+              autoComplete="off"
+              className="h-9 px-3 text-[13px] md:text-[12px]"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <Label
+                htmlFor="default-model"
+                className="text-[11px] font-medium tracking-wide text-steel"
+              >
+                Model
+              </Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void onLoadModels();
+                }}
+                disabled={modelsStatus === "loading"}
+                className="h-7 px-2 text-[11px] text-steel [&_svg]:size-3.5"
+              >
+                {modelsStatus === "loading" ? (
+                  <Loader2 data-icon="inline-start" className="animate-spin" />
+                ) : (
+                  <Download data-icon="inline-start" />
+                )}
+                Load models
+              </Button>
+            </div>
+
+            <Select
+              value={draft.defaultModel}
+              onValueChange={(next) => {
+                if (next) onUpdateDraft("defaultModel", next);
+              }}
+            >
+              <SelectTrigger
+                id="default-model"
+                aria-label="Model"
+                className="h-9 w-full text-[12px]"
+              >
+                <SelectValue placeholder="Load models first" />
+              </SelectTrigger>
+              <SelectContent>
+                {modelOptions.map((model) => (
+                  <SelectItem key={model} value={model} className="text-[12px]">
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <p className="text-[11px] leading-4 text-destructive">
+              {modelsError}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme()
+  const options: Array<{
+    value: Theme
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    description: string
+  }> = [
+    { value: "light", label: "Light", icon: Sun, description: "Bright surfaces, default palette." },
+    { value: "dark", label: "Dark", icon: Moon, description: "Dimmed surfaces for low-light." },
+    { value: "system", label: "System", icon: Monitor, description: "Match your OS preference." },
+  ]
+
+  return (
+    <>
+      <div className="mb-4">
+        <h3 className="text-[12px] font-semibold text-ink">Theme</h3>
+        <p className="mt-0.5 text-[11px] leading-4 text-steel">
+          Choose how the workspace looks. System follows your operating system setting.
+        </p>
+      </div>
+
+      <ToggleGroup
+        type="single"
+        value={theme}
+        onValueChange={(next) => {
+          if (next) setTheme(next as Theme)
+        }}
+        variant="outline"
+        spacing={8}
+        className="grid w-full grid-cols-1 sm:grid-cols-3"
+      >
+        {options.map(({ value, label, icon: Icon, description }) => (
+          <ToggleGroupItem
+            key={value}
+            value={value}
+            aria-label={label}
+            className={cn(
+              "flex h-auto w-full flex-col items-start gap-1.5 rounded-lg border border-hairline-soft bg-card p-3 text-left",
+              "data-[state=on]:border-primary/35 data-[state=on]:bg-tint-lavender data-[state=on]:text-brand-purple-800",
+            )}
+          >
+            <span className="flex w-full items-center justify-between">
+              <Icon className="size-3.5" />
+              {theme === value ? <Check className="size-3 text-primary" /> : null}
+            </span>
+            <span className="text-[12px] font-medium">{label}</span>
+            <span className="text-[11px] leading-4 text-steel">{description}</span>
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </>
+  )
 }
