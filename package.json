@@ -8,13 +8,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/copy-sqlite-wasm.mjs",
+    "predev": "node scripts/copy-sqlite-wasm.mjs",
+    "prebuild": "node scripts/copy-sqlite-wasm.mjs"
   },
   "dependencies": {
     "@base-ui/react": "latest",
     "@radix-ui/react-label": "latest",
     "@radix-ui/react-select": "latest",
     "@radix-ui/react-slot": "latest",
+    "@sqlite.org/sqlite-wasm": "3.53.0-build1",
     "class-variance-authority": "latest",
     "clsx": "latest",
     "lucide-react": "latest",

@@ -86,8 +86,36 @@ export async function POST(request: Request) {
       )
     }
 
+    let dataUri: string
+    if (b64) {
+      dataUri = `data:image/png;base64,${b64}`
+    } else {
+      try {
+        const upstream = await fetch(url as string)
+        if (!upstream.ok) {
+          throw new Error(`Upstream image fetch failed with status ${upstream.status}`)
+        }
+        const buf = await upstream.arrayBuffer()
+        const encoded = Buffer.from(buf).toString("base64")
+        const contentType = upstream.headers.get("content-type") || "image/png"
+        dataUri = `data:${contentType};base64,${encoded}`
+      } catch (fetchError) {
+        const fetchMessage =
+          fetchError instanceof Error
+            ? fetchError.message
+            : "Failed to materialize image URL."
+        console.error("[/api/generate] failed to materialize image URL", {
+          message: fetchMessage,
+        })
+        return Response.json(
+          { error: "The provider returned a URL that could not be loaded." },
+          { status: 502 },
+        )
+      }
+    }
+
     return Response.json({
-      image: b64 ? `data:image/png;base64,${b64}` : url,
+      image: dataUri,
       model,
       revisedPrompt: image?.revised_prompt,
     })
