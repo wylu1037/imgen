@@ -51,6 +51,7 @@ export default function ChatPage() {
     persistent,
     messages,
     append,
+    deleteTurn,
     clearAll: clearHistory,
   } = useChatHistory();
 
@@ -64,6 +65,9 @@ export default function ChatPage() {
   const [scrollTargetTurnId, setScrollTargetTurnId] = React.useState<
     string | null
   >(null);
+  const [selectedTurnIds, setSelectedTurnIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const isGenerating = pendingTurn !== null;
   const persistenceWarnedRef = React.useRef(false);
   const providerModelOptions = React.useMemo<OptionItem[]>(() => {
@@ -212,6 +216,57 @@ export default function ChatPage() {
     setScrollTargetTurnId(null);
   }, []);
 
+  const clearSelection = React.useCallback(() => {
+    setSelectedTurnIds(new Set());
+  }, []);
+
+  const toggleTurnSelection = React.useCallback((turnId: string) => {
+    setSelectedTurnIds((current) => {
+      const next = new Set(current);
+      if (next.has(turnId)) {
+        next.delete(turnId);
+      } else {
+        next.add(turnId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDeleteTurn = React.useCallback(
+    async (turnId: string) => {
+      try {
+        await deleteTurn(turnId);
+        setScrollTargetTurnId((current) => (current === turnId ? null : current));
+        setSelectedTurnIds((current) => {
+          if (!current.has(turnId)) return current;
+          const next = new Set(current);
+          next.delete(turnId);
+          return next;
+        });
+      } catch (err) {
+        console.error("[chat] failed to delete turn", err);
+        toast.error("Failed to delete message.");
+      }
+    },
+    [deleteTurn],
+  );
+
+  const handleDeleteSelectedTurns = React.useCallback(async () => {
+    const turnIds = Array.from(selectedTurnIds);
+    if (turnIds.length === 0) return;
+
+    try {
+      await Promise.all(turnIds.map((turnId) => deleteTurn(turnId)));
+      setScrollTargetTurnId((current) =>
+        current && selectedTurnIds.has(current) ? null : current,
+      );
+      clearSelection();
+    } catch (err) {
+      console.error("[chat] failed to delete selected turns", err);
+      toast.error("Failed to delete selected messages.");
+    }
+  }, [clearSelection, deleteTurn, selectedTurnIds]);
+
   return (
     <SidebarProvider className="h-dvh min-h-0">
       <ChatSidebar
@@ -240,6 +295,15 @@ export default function ChatPage() {
             isEmpty={messages.length === 0 && !pendingTurn}
             onPickSample={(prompt) => setDraft(prompt)}
             onEditPrompt={(prompt) => setDraft(prompt)}
+            onDeleteTurn={(turnId) => {
+              void handleDeleteTurn(turnId);
+            }}
+            selectedTurnIds={selectedTurnIds}
+            onToggleTurnSelection={toggleTurnSelection}
+            onClearSelection={clearSelection}
+            onDeleteSelectedTurns={() => {
+              void handleDeleteSelectedTurns();
+            }}
             scrollTargetTurnId={scrollTargetTurnId}
             onScrollHandled={handleScrollHandled}
           />

@@ -3,7 +3,16 @@
 import * as React from "react"
 import { Dialog } from "@base-ui/react/dialog"
 import Image from "next/image"
-import { AlertCircle, Copy, Download, Expand, Loader2, Pencil } from "lucide-react"
+import {
+  AlertCircle,
+  Check,
+  Copy,
+  Download,
+  Expand,
+  Loader2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
@@ -18,9 +27,13 @@ type PendingTurn = {
 }
 
 type UserBubbleProps = {
-  message: ChatMessage
-  onEdit: (prompt: string) => void
-}
+  message: ChatMessage;
+  onEdit: (prompt: string) => void;
+  onDeleteTurn: (turnId: string) => void;
+  selected: boolean;
+  selectionMode: boolean;
+  onToggleSelection: (turnId: string) => void;
+};
 
 function formatMetaLine(message: ChatMessage): string {
   const parts: string[] = []
@@ -39,10 +52,12 @@ function imageExtension(imageData: string): string {
 function MessageActionButton({
   label,
   onClick,
+  className,
   children,
 }: {
   label: string
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+  className?: string
   children: React.ReactNode
 }) {
   return (
@@ -54,6 +69,7 @@ function MessageActionButton({
         "inline-flex h-7 w-7 items-center justify-center rounded-md border border-hairline-soft bg-card/95 text-steel shadow-subtle",
         "opacity-0 transition-all duration-150 ease-out hover:bg-secondary hover:text-ink focus:opacity-100 focus:outline-none focus:ring-[3px] focus:ring-primary/15",
         "group-hover:opacity-100 group-focus-within:opacity-100",
+        className,
       )}
     >
       {children}
@@ -61,32 +77,79 @@ function MessageActionButton({
   )
 }
 
-export function UserBubble({ message, onEdit }: UserBubbleProps) {
+export function UserBubble({
+  message,
+  onEdit,
+  onDeleteTurn,
+  selected,
+  selectionMode,
+  onToggleSelection,
+}: UserBubbleProps) {
   const handleCopy = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    void navigator.clipboard?.writeText(message.content)
-  }
+    event.stopPropagation();
+    void navigator.clipboard?.writeText(message.content);
+  };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    onEdit(message.content)
-  }
+    event.stopPropagation();
+    onEdit(message.content);
+  };
+
+  const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onDeleteTurn(message.turnId);
+  };
+
+  const handleToggleSelection = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    onToggleSelection(message.turnId);
+  };
 
   return (
     <div className="group flex justify-end gap-2" data-turn-id={message.turnId}>
       <div className="flex items-center gap-1 self-start pt-1">
+        <MessageActionButton
+          label={selected ? "Deselect message" : "Select message"}
+          onClick={handleToggleSelection}
+          className={cn(
+            selectionMode && "opacity-100",
+            selected &&
+              "border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary",
+          )}
+        >
+          {selected ? (
+            <Check className="h-3.5 w-3.5" />
+          ) : (
+            <span className="h-3.5 w-3.5 rounded-xs border border-current" />
+          )}
+        </MessageActionButton>
         <MessageActionButton label="Copy message" onClick={handleCopy}>
           <Copy className="h-3.5 w-3.5" />
         </MessageActionButton>
         <MessageActionButton label="Edit message" onClick={handleEdit}>
           <Pencil className="h-3.5 w-3.5" />
         </MessageActionButton>
+        <MessageActionButton
+          label="Delete message"
+          onClick={handleDelete}
+          className="hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </MessageActionButton>
       </div>
-      <div className="max-w-[80%] rounded-lg bg-tint-lavender px-3.5 py-2.5 text-[14px] leading-relaxed text-brand-purple-800">
+      <div
+        className={cn(
+          "max-w-[80%] rounded-lg bg-tint-lavender px-3.5 py-2.5 text-[14px] leading-relaxed text-brand-purple-800",
+          selected &&
+            "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
+        )}
+      >
         <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
       </div>
     </div>
-  )
+  );
 }
 
 export function AssistantBubble({ message }: { message: ChatMessage }) {

@@ -2,6 +2,9 @@
 
 import * as React from "react"
 
+import { Trash2, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "@/lib/chat/types"
 
 import {
@@ -13,14 +16,19 @@ import {
 import { SamplePrompts } from "./sample-prompts"
 
 type MessageListProps = {
-  messages: ChatMessage[]
-  pendingTurn: PendingTurn | null
-  isEmpty: boolean
-  onPickSample: (prompt: string) => void
-  onEditPrompt: (prompt: string) => void
-  scrollTargetTurnId: string | null
-  onScrollHandled: () => void
-}
+  messages: ChatMessage[];
+  pendingTurn: PendingTurn | null;
+  isEmpty: boolean;
+  onPickSample: (prompt: string) => void;
+  onEditPrompt: (prompt: string) => void;
+  onDeleteTurn: (turnId: string) => void;
+  selectedTurnIds: Set<string>;
+  onToggleTurnSelection: (turnId: string) => void;
+  onClearSelection: () => void;
+  onDeleteSelectedTurns: () => void;
+  scrollTargetTurnId: string | null;
+  onScrollHandled: () => void;
+};
 
 export function MessageList({
   messages,
@@ -28,28 +36,35 @@ export function MessageList({
   isEmpty,
   onPickSample,
   onEditPrompt,
+  onDeleteTurn,
+  selectedTurnIds,
+  onToggleTurnSelection,
+  onClearSelection,
+  onDeleteSelectedTurns,
   scrollTargetTurnId,
   onScrollHandled,
 }: MessageListProps) {
-  const scrollRef = React.useRef<HTMLDivElement | null>(null)
-  const bottomRef = React.useRef<HTMLDivElement | null>(null)
+  const scrollRef = React.useRef<HTMLDivElement | null>(null);
+  const bottomRef = React.useRef<HTMLDivElement | null>(null);
+  const selectedCount = selectedTurnIds.size;
+  const selectionMode = selectedCount > 0;
 
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-  }, [messages.length, pendingTurn?.turnId])
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length, pendingTurn?.turnId]);
 
   React.useEffect(() => {
-    if (!scrollTargetTurnId) return
-    const container = scrollRef.current
-    if (!container) return
+    if (!scrollTargetTurnId) return;
+    const container = scrollRef.current;
+    if (!container) return;
     const el = container.querySelector<HTMLElement>(
       `[data-turn-id="${CSS.escape(scrollTargetTurnId)}"]`,
-    )
+    );
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" })
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    onScrollHandled()
-  }, [scrollTargetTurnId, onScrollHandled])
+    onScrollHandled();
+  }, [scrollTargetTurnId, onScrollHandled]);
 
   if (isEmpty) {
     return (
@@ -67,7 +82,7 @@ export function MessageList({
           <SamplePrompts onPick={onPickSample} />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -75,7 +90,15 @@ export function MessageList({
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         {messages.map((message) =>
           message.role === "user" ? (
-            <UserBubble key={message.id} message={message} onEdit={onEditPrompt} />
+            <UserBubble
+              key={message.id}
+              message={message}
+              onEdit={onEditPrompt}
+              onDeleteTurn={onDeleteTurn}
+              selected={selectedTurnIds.has(message.turnId)}
+              selectionMode={selectionMode}
+              onToggleSelection={onToggleTurnSelection}
+            />
           ) : (
             <AssistantBubble key={message.id} message={message} />
           ),
@@ -83,6 +106,35 @@ export function MessageList({
         {pendingTurn ? <PendingBubble turn={pendingTurn} /> : null}
         <div ref={bottomRef} className="h-px shrink-0" />
       </div>
+      {selectionMode ? (
+        <div className="pointer-events-none sticky bottom-4 z-10 mt-4 flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-2 rounded-md border border-border bg-card/95 px-3 py-2 shadow-modal backdrop-blur-sm">
+            <span className="px-1 text-xs font-medium text-ink">
+              {selectedCount} selected
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClearSelection}
+              className="h-8 rounded-md text-xs! text-steel"
+            >
+              <X className="size-3" />
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={onDeleteSelectedTurns}
+              className="h-8 rounded-md text-xs!"
+            >
+              <Trash2 className="size-3" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
-  )
+  );
 }

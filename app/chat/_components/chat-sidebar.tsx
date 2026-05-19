@@ -85,7 +85,7 @@ export function ChatSidebar({
         {hasHistory ? (
           groups.map((group) => (
             <SidebarGroup key={group.key}>
-              <SidebarGroupLabel className="text-[11px] font-medium uppercase tracking-[0.12em] text-stone">
+              <SidebarGroupLabel className="text-[11px] font-medium tracking-[0.12em] text-stone">
                 {group.label}
               </SidebarGroupLabel>
               <SidebarGroupContent>
