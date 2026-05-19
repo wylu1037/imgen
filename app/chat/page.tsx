@@ -52,7 +52,6 @@ export default function ChatPage() {
     messages,
     append,
     deleteTurn,
-    clearAll: clearHistory,
   } = useChatHistory();
 
   const [draft, setDraft] = React.useState("");
@@ -279,10 +278,6 @@ export default function ChatPage() {
         onCreateProvider={createProvider}
         onSaveProvider={saveProvider}
         onDeleteProvider={deleteProvider}
-        onClearChat={() => {
-          void clearHistory();
-        }}
-        hasMessages={messages.length > 0}
       />
 
       <SidebarInset className="overflow-hidden">

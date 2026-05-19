@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ImageIcon, Settings, Trash2 } from "lucide-react";
+import { ImageIcon, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button"
 import {
@@ -34,8 +34,6 @@ type ChatSidebarProps = {
   onCreateProvider: () => ProviderConfig
   onSaveProvider: (provider: ProviderConfig) => void
   onDeleteProvider: (providerId: string) => void
-  onClearChat: () => void
-  hasMessages: boolean
 }
 
 export function ChatSidebar({
@@ -48,8 +46,6 @@ export function ChatSidebar({
   onCreateProvider,
   onSaveProvider,
   onDeleteProvider,
-  onClearChat,
-  hasMessages,
 }: ChatSidebarProps) {
   const groups = React.useMemo(
     () => groupUserTurnsByTime(messages),
@@ -123,19 +119,6 @@ export function ChatSidebar({
       </SidebarContent>
 
       <SidebarFooter className="gap-1 border-hairline-soft">
-        {hasMessages ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onClearChat}
-            aria-label="Clear chat"
-            className="w-full justify-start text-[13px] text-steel"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Clear chat
-          </Button>
-        ) : null}
         <SettingsDialog
           open={isSettingsOpen}
           onOpenChange={setIsSettingsOpen}
