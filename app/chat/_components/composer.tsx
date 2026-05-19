@@ -94,9 +94,11 @@ export function Composer({
         placeholder="Describe the image you want to generate…"
         rows={1}
         className={cn(
-          "min-h-[44px] max-h-48 resize-none border-0 bg-transparent shadow-none",
+          "min-h-11 max-h-48 resize-none border-0 bg-transparent shadow-none",
           "focus-visible:ring-0 focus-visible:border-0",
-          "px-4 py-3 text-[14px]",
+          "px-4 py-3 text-[13px] md:text-[13px] leading-relaxed",
+          "font-serif tracking-[0.005em]",
+          "placeholder:italic placeholder:font-serif placeholder:text-stone/90",
         )}
         disabled={isGenerating}
       />
@@ -111,8 +113,7 @@ export function Composer({
           aria-label="Surprise me with a sample prompt"
           className="text-[12px] text-steel"
         >
-          <Dices className="h-3.5 w-3.5" />
-          Surprise me
+          <Dices className="size-3.5" />
         </Button>
         <Button
           type="button"
@@ -130,5 +131,5 @@ export function Composer({
         </Button>
       </div>
     </div>
-  )
+  );
 }

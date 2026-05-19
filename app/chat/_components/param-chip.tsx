@@ -30,14 +30,14 @@ export function ParamChip({
     <Select.Root
       value={value}
       onValueChange={(next) => {
-        if (next) onValueChange(next)
+        if (next) onValueChange(next);
       }}
       disabled={disabled}
     >
       <Select.Trigger
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex h-7 items-center gap-1.5 rounded-full border border-hairline-strong bg-card px-2.5 text-[12px] font-medium text-charcoal",
+          "inline-flex h-7 items-center gap-1.5 rounded-md border border-hairline-strong bg-card px-2.5 text-sm! font-medium text-charcoal",
           "transition-colors duration-150 ease-out",
           "focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/15",
           "data-disabled:cursor-not-allowed data-disabled:opacity-50",
@@ -82,5 +82,5 @@ export function ParamChip({
         </Select.Positioner>
       </Select.Portal>
     </Select.Root>
-  )
+  );
 }

@@ -90,6 +90,7 @@
   /* Fonts — Inter standing in for Notion Sans */
   --font-sans: "Notion Sans", Inter, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Helvetica, sans-serif;
   --font-display: "Notion Sans", Inter, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Helvetica, sans-serif;
+  --font-serif: var(--font-instrument-serif), "Iowan Old Style", "Apple Garamond", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
 }
 

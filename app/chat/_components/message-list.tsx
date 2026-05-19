@@ -17,6 +17,8 @@ type MessageListProps = {
   pendingTurn: PendingTurn | null
   isEmpty: boolean
   onPickSample: (prompt: string) => void
+  scrollTargetTurnId: string | null
+  onScrollHandled: () => void
 }
 
 export function MessageList({
@@ -24,6 +26,8 @@ export function MessageList({
   pendingTurn,
   isEmpty,
   onPickSample,
+  scrollTargetTurnId,
+  onScrollHandled,
 }: MessageListProps) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null)
   const bottomRef = React.useRef<HTMLDivElement | null>(null)
@@ -31,6 +35,19 @@ export function MessageList({
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
   }, [messages.length, pendingTurn?.turnId])
+
+  React.useEffect(() => {
+    if (!scrollTargetTurnId) return
+    const container = scrollRef.current
+    if (!container) return
+    const el = container.querySelector<HTMLElement>(
+      `[data-turn-id="${CSS.escape(scrollTargetTurnId)}"]`,
+    )
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+    onScrollHandled()
+  }, [scrollTargetTurnId, onScrollHandled])
 
   if (isEmpty) {
     return (
@@ -52,10 +69,7 @@ export function MessageList({
   }
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex-1 overflow-y-auto px-4 py-6"
-    >
+    <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         {messages.map((message) =>
           message.role === "user" ? (
