@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Check, ChevronDown } from "lucide-react"
-import { Select } from "@base-ui/react/select"
+import * as React from "react";
+import { Check, ChevronDown } from "lucide-react";
+import { Select } from "@base-ui/react/select";
 
-import { cn } from "@/lib/utils"
-import type { OptionItem } from "@/lib/chat/constants"
+import { cn } from "@/lib/utils";
+import type { OptionItem } from "@/lib/chat/constants";
 
 type ParamChipProps = {
-  ariaLabel: string
-  value: string
-  onValueChange: (next: string) => void
-  options: OptionItem[]
-  icon?: React.ReactNode
-  disabled?: boolean
-}
+  ariaLabel: string;
+  value: string;
+  onValueChange: (next: string) => void;
+  options: OptionItem[];
+  icon?: React.ReactNode;
+  disabled?: boolean;
+};
 
 export function ParamChip({
   ariaLabel,
@@ -24,7 +24,7 @@ export function ParamChip({
   icon,
   disabled,
 }: ParamChipProps) {
-  const selected = options.find((option) => option.value === value)
+  const selected = options.find((option) => option.value === value);
 
   return (
     <Select.Root
@@ -39,7 +39,7 @@ export function ParamChip({
         className={cn(
           "inline-flex h-7 items-center gap-1.5 rounded-md border border-hairline-strong bg-card px-2.5 text-sm! font-medium text-charcoal",
           "transition-colors duration-150 ease-out",
-          "focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+          "focus:border-primary focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
           "data-disabled:cursor-not-allowed data-disabled:opacity-50",
         )}
       >
@@ -59,7 +59,7 @@ export function ParamChip({
                 key={option.value}
                 value={option.value}
                 className={cn(
-                  "grid cursor-default select-none grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none",
+                  "grid cursor-default grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none select-none",
                   "data-highlighted:bg-secondary data-highlighted:text-ink",
                 )}
               >

@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { samplePrompts } from "@/lib/chat/constants"
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { samplePrompts } from "@/lib/chat/constants";
 
 type SamplePromptsProps = {
-  onPick: (prompt: string) => void
-}
+  onPick: (prompt: string) => void;
+};
 
 export function SamplePrompts({ onPick }: SamplePromptsProps) {
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <div className="mb-4 flex items-center gap-2 text-[12px] uppercase tracking-[0.16em] text-stone">
+      <div className="mb-4 flex items-center gap-2 text-[12px] tracking-[0.16em] text-stone uppercase">
         <Sparkles className="h-3.5 w-3.5" />
         Try a sample prompt
       </div>
@@ -25,7 +25,7 @@ export function SamplePrompts({ onPick }: SamplePromptsProps) {
             variant="outline"
             onClick={() => onPick(prompt)}
             className={cn(
-              "h-auto min-h-0 items-start justify-start whitespace-normal px-3.5 py-3 text-left text-[13px] leading-relaxed text-charcoal",
+              "h-auto min-h-0 items-start justify-start px-3.5 py-3 text-left text-[13px] leading-relaxed whitespace-normal text-charcoal",
               "border-hairline-soft bg-surface-soft",
             )}
           >
@@ -34,5 +34,5 @@ export function SamplePrompts({ onPick }: SamplePromptsProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 type ImgenMarkProps = {
-  className?: string
-}
+  className?: string;
+};
 
 export function ImgenMark({ className }: ImgenMarkProps) {
-  const gradientId = React.useId()
+  const gradientId = React.useId();
   return (
     <svg
       viewBox="0 0 180 180"
@@ -27,7 +27,7 @@ export function ImgenMark({ className }: ImgenMarkProps) {
         fill={`url(#${gradientId})`}
       />
     </svg>
-  )
+  );
 }
 
 export function ImgenMarkBadge({ className }: ImgenMarkProps) {
@@ -41,5 +41,5 @@ export function ImgenMarkBadge({ className }: ImgenMarkProps) {
     >
       <ImgenMark />
     </span>
-  )
+  );
 }

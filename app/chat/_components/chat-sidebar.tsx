@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
+import Link from "next/link";
 import { ImageIcon, Settings } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -17,25 +17,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { ImgenMark } from "@/app/_components/imgen-mark"
-import { cn } from "@/lib/utils"
-import { groupUserTurnsByTime, summarizeTurn } from "@/lib/chat/grouping"
-import type { ChatMessage, ProviderConfig } from "@/lib/chat/types"
+} from "@/components/ui/sidebar";
+import { ImgenMark } from "@/app/_components/imgen-mark";
+import { cn } from "@/lib/utils";
+import { groupUserTurnsByTime, summarizeTurn } from "@/lib/chat/grouping";
+import type { ChatMessage, ProviderConfig } from "@/lib/chat/types";
 
-import { SettingsDialog } from "./settings-dialog"
+import { SettingsDialog } from "./settings-dialog";
 
 type ChatSidebarProps = {
-  messages: ChatMessage[]
-  selectedTurnId: string | null
-  onSelectTurn: (turnId: string) => void
-  providers: ProviderConfig[]
-  activeProviderId: string | null
-  onSelectProvider: (providerId: string) => void
-  onCreateProvider: () => ProviderConfig
-  onSaveProvider: (provider: ProviderConfig) => void
-  onDeleteProvider: (providerId: string) => void
-}
+  messages: ChatMessage[];
+  selectedTurnId: string | null;
+  onSelectTurn: (turnId: string) => void;
+  providers: ProviderConfig[];
+  activeProviderId: string | null;
+  onSelectProvider: (providerId: string) => void;
+  onCreateProvider: () => ProviderConfig;
+  onSaveProvider: (provider: ProviderConfig) => void;
+  onDeleteProvider: (providerId: string) => void;
+};
 
 export function ChatSidebar({
   messages,
@@ -51,28 +51,28 @@ export function ChatSidebar({
   const groups = React.useMemo(
     () => groupUserTurnsByTime(messages),
     [messages],
-  )
-  const hasHistory = groups.length > 0
-  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
-  const { isMobile, setOpenMobile } = useSidebar()
+  );
+  const hasHistory = groups.length > 0;
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const handleSelectTurn = (turnId: string) => {
-    onSelectTurn(turnId)
-    if (isMobile) setOpenMobile(false)
-  }
+    onSelectTurn(turnId);
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader className="border-hairline-soft">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-2 py-1 font-serif text-2xl font-semibold italic tracking-tight text-ink"
+          className="inline-flex items-center gap-2 px-2 py-1 font-serif text-2xl font-semibold tracking-tight text-ink italic"
         >
           <span className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-ink shadow-subtle">
             <ImgenMark />
           </span>
           <span>
-            Imgen<span className="not-italic text-primary">.</span>
+            Imgen<span className="text-primary not-italic">.</span>
           </span>
         </Link>
       </SidebarHeader>

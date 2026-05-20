@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
 import { Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useUserAvatar } from "@/hooks/use-user-avatar"
-import type { ChatMessage } from "@/lib/chat/types"
+import { useUserAvatar } from "@/hooks/use-user-avatar";
+import type { ChatMessage } from "@/lib/chat/types";
 
 import {
   AssistantBubble,
   PendingBubble,
   UserBubble,
   type PendingTurn,
-} from "./message-bubble"
-import { SamplePrompts } from "./sample-prompts"
+} from "./message-bubble";
+import { SamplePrompts } from "./sample-prompts";
 
 type MessageListProps = {
   messages: ChatMessage[];

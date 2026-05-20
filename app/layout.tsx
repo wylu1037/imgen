@@ -1,9 +1,9 @@
-import type { Metadata } from "next"
-import { Instrument_Serif } from "next/font/google"
-import { Toaster } from "sonner"
+import type { Metadata } from "next";
+import { Instrument_Serif } from "next/font/google";
+import { Toaster } from "sonner";
 
-import { AmbientBackground } from "./_components/ambient-background"
-import "./globals.css"
+import { AmbientBackground } from "./_components/ambient-background";
+import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -11,20 +11,25 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
   variable: "--font-instrument-serif",
   display: "swap",
-})
+});
 
 export const metadata: Metadata = {
   title: "AI Image Workspace",
-  description: "Generate images through a configurable OpenAI image API workspace.",
-}
+  description:
+    "Generate images through a configurable OpenAI image API workspace.",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={instrumentSerif.variable}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={instrumentSerif.variable}
+    >
       <body>
         <AmbientBackground />
         {children}

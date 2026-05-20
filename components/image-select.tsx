@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import { Check, ChevronDown } from "lucide-react"
-import { Select } from "@base-ui/react/select"
+import { Check, ChevronDown } from "lucide-react";
+import { Select } from "@base-ui/react/select";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 type ImageOption = {
-  label: string
-  value: string
-  meta?: string
-}
+  label: string;
+  value: string;
+  meta?: string;
+};
 
 type ImageSelectProps = {
-  value: string
-  onValueChange: (value: string) => void
-  options: ImageOption[]
-  ariaLabel: string
-}
+  value: string;
+  onValueChange: (value: string) => void;
+  options: ImageOption[];
+  ariaLabel: string;
+};
 
 export function ImageSelect({
   value,
@@ -24,7 +24,7 @@ export function ImageSelect({
   options,
   ariaLabel,
 }: ImageSelectProps) {
-  const selected = options.find((option) => option.value === value)
+  const selected = options.find((option) => option.value === value);
 
   return (
     <Select.Root
@@ -37,7 +37,7 @@ export function ImageSelect({
     >
       <Select.Trigger
         aria-label={ariaLabel}
-        className="flex h-11 w-full items-center justify-between gap-2 rounded-md border border-hairline-strong bg-card px-4 text-left text-sm text-ink transition-all duration-150 ease-out focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/15 data-disabled:cursor-not-allowed data-disabled:opacity-50"
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-md border border-hairline-strong bg-card px-4 text-left text-sm text-ink transition-all duration-150 ease-out focus:border-primary focus:ring-[3px] focus:ring-primary/15 focus:outline-none data-disabled:cursor-not-allowed data-disabled:opacity-50"
       >
         <Select.Value>
           <span className="flex min-w-0 items-baseline gap-2">
@@ -63,7 +63,7 @@ export function ImageSelect({
                 key={option.value}
                 value={option.value}
                 className={cn(
-                  "grid cursor-default select-none grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none",
+                  "grid cursor-default grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none select-none",
                   "data-highlighted:bg-secondary data-highlighted:text-ink",
                 )}
               >
@@ -73,9 +73,7 @@ export function ImageSelect({
                   </Select.ItemIndicator>
                 </span>
                 <Select.ItemText>
-                  <span className="font-medium text-ink">
-                    {option.label}
-                  </span>
+                  <span className="font-medium text-ink">{option.label}</span>
                 </Select.ItemText>
                 {option.meta ? (
                   <span className="text-[11px] tracking-tight text-steel">

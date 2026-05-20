@@ -72,15 +72,17 @@ export default function ChatPage() {
   const providerModelOptions = React.useMemo<OptionItem[]>(() => {
     const models = activeProvider?.models.length
       ? activeProvider.models
-      : [activeProvider?.defaultModel || defaultImageModel]
-    return models.map((model) => ({ label: model, value: model }))
+      : [activeProvider?.defaultModel || defaultImageModel];
+    return models.map((model) => ({ label: model, value: model }));
   }, [activeProvider]);
 
   const selectedModel = React.useMemo(() => {
     if (!activeProvider) return model;
     return activeProvider.models.includes(model)
       ? model
-      : activeProvider.defaultModel || activeProvider.models[0] || defaultImageModel;
+      : activeProvider.defaultModel ||
+          activeProvider.models[0] ||
+          defaultImageModel;
   }, [activeProvider, model]);
 
   React.useEffect(() => {
@@ -235,7 +237,9 @@ export default function ChatPage() {
     async (turnId: string) => {
       try {
         await deleteTurn(turnId);
-        setScrollTargetTurnId((current) => (current === turnId ? null : current));
+        setScrollTargetTurnId((current) =>
+          current === turnId ? null : current,
+        );
         setSelectedTurnIds((current) => {
           if (!current.has(turnId)) return current;
           const next = new Set(current);
@@ -281,7 +285,7 @@ export default function ChatPage() {
       />
 
       <SidebarInset className="overflow-hidden">
-        <SidebarTrigger className="absolute left-3 top-3 z-10" />
+        <SidebarTrigger className="absolute top-3 left-3 z-10" />
 
         <div className="flex flex-1 flex-col overflow-hidden pt-12">
           <MessageList

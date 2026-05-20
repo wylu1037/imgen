@@ -1,0 +1,13 @@
+.next
+node_modules
+public/sqlite-wasm
+pnpm-lock.yaml
+*.min.js
+*.min.css
+dist
+build
+coverage
+.vercel
+.agents
+.claude
+.vscode

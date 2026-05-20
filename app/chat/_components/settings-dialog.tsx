@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   Check,
   Download,
@@ -18,7 +18,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -27,10 +27,10 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -38,59 +38,62 @@ import {
   SelectPositioner,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { useTheme, type Theme } from "@/hooks/use-theme"
-import { useUserAvatar } from "@/hooks/use-user-avatar"
-import { userAvatars } from "@/lib/avatars"
-import { defaultImageModel } from "@/lib/chat/constants"
-import type { ProviderConfig } from "@/lib/chat/types"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useTheme, type Theme } from "@/hooks/use-theme";
+import { useUserAvatar } from "@/hooks/use-user-avatar";
+import { userAvatars } from "@/lib/avatars";
+import { defaultImageModel } from "@/lib/chat/constants";
+import type { ProviderConfig } from "@/lib/chat/types";
+import { cn } from "@/lib/utils";
 
 type SettingsDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  providers: ProviderConfig[]
-  activeProviderId: string | null
-  onSelectProvider: (providerId: string) => void
-  onCreateProvider: () => ProviderConfig
-  onSaveProvider: (provider: ProviderConfig) => void
-  onDeleteProvider: (providerId: string) => void
-  trigger: React.ReactNode
-}
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  providers: ProviderConfig[];
+  activeProviderId: string | null;
+  onSelectProvider: (providerId: string) => void;
+  onCreateProvider: () => ProviderConfig;
+  onSaveProvider: (provider: ProviderConfig) => void;
+  onDeleteProvider: (providerId: string) => void;
+  trigger: React.ReactNode;
+};
 
 type ProviderDraft = {
-  name: string
-  apiKey: string
-  baseURL: string
-  models: string[]
-  defaultModel: string
-}
+  name: string;
+  apiKey: string;
+  baseURL: string;
+  models: string[];
+  defaultModel: string;
+};
 
 type ModelsResponse = {
-  models?: string[]
-  error?: string
-}
+  models?: string[];
+  error?: string;
+};
 
-type Section = "profile" | "provider" | "appearance"
+type Section = "profile" | "provider" | "appearance";
 
 const SECTIONS: Array<{
-  id: Section
-  label: string
-  icon: React.ComponentType<{ className?: string }>
+  id: Section;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }> = [
   { id: "profile", label: "Profile", icon: UserRound },
   { id: "provider", label: "Provider", icon: Plug },
   { id: "appearance", label: "Appearance", icon: Palette },
-]
+];
 
 function normalizeModels(models: string[]): string[] {
-  return Array.from(new Set(models.map((model) => model.trim()).filter(Boolean)))
+  return Array.from(
+    new Set(models.map((model) => model.trim()).filter(Boolean)),
+  );
 }
 
 function providerToDraft(provider: ProviderConfig): ProviderDraft {
-  const models = normalizeModels(provider.models)
-  const defaultModel = provider.defaultModel.trim() || models[0] || defaultImageModel
+  const models = normalizeModels(provider.models);
+  const defaultModel =
+    provider.defaultModel.trim() || models[0] || defaultImageModel;
 
   return {
     name: provider.name,
@@ -98,7 +101,7 @@ function providerToDraft(provider: ProviderConfig): ProviderDraft {
     baseURL: provider.baseURL,
     models: models.includes(defaultModel) ? models : [defaultModel, ...models],
     defaultModel,
-  }
+  };
 }
 
 export function SettingsDialog({
@@ -115,122 +118,128 @@ export function SettingsDialog({
   const activeProvider =
     providers.find((provider) => provider.id === activeProviderId) ||
     providers[0] ||
-    null
-  const [section, setSection] = React.useState<Section>("provider")
+    null;
+  const [section, setSection] = React.useState<Section>("provider");
   const [draftState, setDraftState] = React.useState(() => ({
     providerId: activeProvider?.id ?? null,
     draft: activeProvider ? providerToDraft(activeProvider) : null,
-  }))
-  const [modelsStatus, setModelsStatus] = React.useState<"idle" | "loading" | "error">("idle")
-  const [modelsError, setModelsError] = React.useState("")
-  const activeProviderDraftId = activeProvider?.id ?? null
+  }));
+  const [modelsStatus, setModelsStatus] = React.useState<
+    "idle" | "loading" | "error"
+  >("idle");
+  const [modelsError, setModelsError] = React.useState("");
+  const activeProviderDraftId = activeProvider?.id ?? null;
 
   if (draftState.providerId !== activeProviderDraftId) {
     setDraftState({
       providerId: activeProviderDraftId,
       draft: activeProvider ? providerToDraft(activeProvider) : null,
-    })
-    if (modelsStatus !== "idle") setModelsStatus("idle")
-    if (modelsError) setModelsError("")
+    });
+    if (modelsStatus !== "idle") setModelsStatus("idle");
+    if (modelsError) setModelsError("");
   }
 
-  const draft = draftState.draft
+  const draft = draftState.draft;
 
   const updateDraft = (key: keyof ProviderDraft, value: string | string[]) => {
     setDraftState((current) =>
       current.draft
         ? { ...current, draft: { ...current.draft, [key]: value } }
         : current,
-    )
-  }
+    );
+  };
 
   const handleCreateProvider = () => {
-    onCreateProvider()
-  }
+    onCreateProvider();
+  };
 
   const handleLoadModels = async () => {
-    if (!draft) return
+    if (!draft) return;
 
-    const apiKey = draft.apiKey.trim()
-    const baseURL = draft.baseURL.trim()
+    const apiKey = draft.apiKey.trim();
+    const baseURL = draft.baseURL.trim();
 
     if (!apiKey) {
-      setModelsStatus("error")
-      setModelsError("Enter your API key before loading models.")
-      return
+      setModelsStatus("error");
+      setModelsError("Enter your API key before loading models.");
+      return;
     }
 
     if (baseURL) {
       try {
-        new URL(baseURL)
+        new URL(baseURL);
       } catch {
-        setModelsStatus("error")
-        setModelsError("Base URL must be a valid URL.")
-        return
+        setModelsStatus("error");
+        setModelsError("Base URL must be a valid URL.");
+        return;
       }
     }
 
-    setModelsStatus("loading")
-    setModelsError("")
+    setModelsStatus("loading");
+    setModelsError("");
 
     try {
       const response = await fetch("/api/models", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ apiKey, baseURL }),
-      })
-      const data = (await response.json()) as ModelsResponse
+      });
+      const data = (await response.json()) as ModelsResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to load models.")
+        throw new Error(data.error || "Failed to load models.");
       }
 
-      const models = normalizeModels(data.models || [])
+      const models = normalizeModels(data.models || []);
       if (models.length === 0) {
-        throw new Error("The provider did not return any models.")
+        throw new Error("The provider did not return any models.");
       }
 
       const defaultModel = models.includes(draft.defaultModel)
         ? draft.defaultModel
-        : models[0]
+        : models[0];
       setDraftState((current) =>
         current.draft
           ? { ...current, draft: { ...current.draft, models, defaultModel } }
           : current,
-      )
-      setModelsStatus("idle")
+      );
+      setModelsStatus("idle");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load models."
-      setModelsStatus("error")
-      setModelsError(message)
+      const message =
+        error instanceof Error ? error.message : "Failed to load models.";
+      setModelsStatus("error");
+      setModelsError(message);
     }
-  }
+  };
 
   const handleSave = () => {
-    if (!activeProvider || !draft) return
+    if (!activeProvider || !draft) return;
 
-    const models = normalizeModels(draft.models)
-    const defaultModel = draft.defaultModel.trim() || models[0] || defaultImageModel
+    const models = normalizeModels(draft.models);
+    const defaultModel =
+      draft.defaultModel.trim() || models[0] || defaultImageModel;
 
     onSaveProvider({
       ...activeProvider,
       name: draft.name,
       apiKey: draft.apiKey,
       baseURL: draft.baseURL,
-      models: models.includes(defaultModel) ? models : [defaultModel, ...models],
+      models: models.includes(defaultModel)
+        ? models
+        : [defaultModel, ...models],
       defaultModel,
       notes: activeProvider.notes,
-    })
-  }
+    });
+  };
 
-  const canDelete = providers.length > 1
+  const canDelete = providers.length > 1;
   const modelOptions = draft
     ? normalizeModels(
         draft.models.includes(draft.defaultModel)
           ? draft.models
           : [draft.defaultModel, ...draft.models],
       )
-    : []
+    : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -239,8 +248,8 @@ export function SettingsDialog({
         showCloseButton={false}
         className="grid h-[min(620px,calc(100vh-4rem))] w-[min(820px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0 text-[12px] sm:max-w-none md:grid-cols-[200px_1fr]"
       >
-        <aside className="border-b border-hairline-soft bg-surface-soft/80 p-2.5 md:border-b-0 md:border-r">
-          <div className="px-2 pb-3 pt-1">
+        <aside className="border-b border-hairline-soft bg-surface-soft/80 p-2.5 md:border-r md:border-b-0">
+          <div className="px-2 pt-1 pb-3">
             <DialogTitle className="text-[12px] font-semibold text-ink">
               Settings
             </DialogTitle>
@@ -260,7 +269,7 @@ export function SettingsDialog({
                   onClick={() => setSection(id)}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] font-medium transition-colors duration-150 ease-out focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                    "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12px] font-medium transition-colors duration-150 ease-out focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
                     isActive
                       ? "bg-tint-lavender text-brand-purple-800"
                       : "text-charcoal hover:bg-tint-gray",
@@ -344,20 +353,20 @@ export function SettingsDialog({
 }
 
 type ProviderSectionProps = {
-  providers: ProviderConfig[]
-  activeProvider: ProviderConfig | null
-  activeProviderId: string | null
-  canDelete: boolean
-  draft: ProviderDraft | null
-  modelOptions: string[]
-  modelsStatus: "idle" | "loading" | "error"
-  modelsError: string
-  onSelectProvider: (providerId: string) => void
-  onCreateProvider: () => void
-  onDeleteProvider: (providerId: string) => void
-  onUpdateDraft: (key: keyof ProviderDraft, value: string | string[]) => void
-  onLoadModels: () => void
-}
+  providers: ProviderConfig[];
+  activeProvider: ProviderConfig | null;
+  activeProviderId: string | null;
+  canDelete: boolean;
+  draft: ProviderDraft | null;
+  modelOptions: string[];
+  modelsStatus: "idle" | "loading" | "error";
+  modelsError: string;
+  onSelectProvider: (providerId: string) => void;
+  onCreateProvider: () => void;
+  onDeleteProvider: (providerId: string) => void;
+  onUpdateDraft: (key: keyof ProviderDraft, value: string | string[]) => void;
+  onLoadModels: () => void;
+};
 
 function ProviderSection({
   providers,
@@ -374,88 +383,88 @@ function ProviderSection({
   onUpdateDraft,
   onLoadModels,
 }: ProviderSectionProps) {
-  const [showApiKey, setShowApiKey] = React.useState(false)
+  const [showApiKey, setShowApiKey] = React.useState(false);
   return (
     <>
       <div className="mb-4 grid gap-2 sm:grid-cols-2">
-          {providers.map((provider) => {
-            const isActive = provider.id === activeProviderId;
-            const isSelected = provider.id === activeProvider?.id;
+        {providers.map((provider) => {
+          const isActive = provider.id === activeProviderId;
+          const isSelected = provider.id === activeProvider?.id;
 
-            return (
-              <button
-                key={provider.id}
-                type="button"
-                onClick={() => onSelectProvider(provider.id)}
-                className={cn(
-                  "group relative min-h-18 rounded-lg border p-2.5 text-left transition-colors duration-150 ease-out",
-                  "hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-                  isSelected
-                    ? "border-primary/35 bg-tint-lavender"
-                    : "border-hairline-soft bg-card",
-                )}
-              >
-                {isActive ? (
+          return (
+            <button
+              key={provider.id}
+              type="button"
+              onClick={() => onSelectProvider(provider.id)}
+              className={cn(
+                "group relative min-h-18 rounded-lg border p-2.5 text-left transition-colors duration-150 ease-out",
+                "hover:bg-tint-gray focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
+                isSelected
+                  ? "border-primary/35 bg-tint-lavender"
+                  : "border-hairline-soft bg-card",
+              )}
+            >
+              {isActive ? (
+                <span
+                  aria-label="Active"
+                  className="absolute top-2 right-2 flex size-1.5"
+                >
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+                </span>
+              ) : null}
+              <span className="flex items-center justify-between gap-2">
+                <span className="min-w-0">
+                  <span className="block truncate text-[12px] font-medium text-ink">
+                    {provider.name || "Untitled provider"}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11px] text-steel">
+                    {provider.defaultModel || defaultImageModel}
+                  </span>
+                </span>
+                {canDelete ? (
                   <span
-                    aria-label="Active"
-                    className="absolute right-2 top-2 flex size-1.5"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Delete ${provider.name || "provider"}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDeleteProvider(provider.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onDeleteProvider(provider.id);
+                    }}
+                    className={cn(
+                      "pointer-events-none inline-flex h-6 w-0 shrink-0 items-center justify-center overflow-hidden rounded-md text-steel opacity-0",
+                      "transition-[width,opacity,margin] duration-200 ease-out",
+                      "group-hover:pointer-events-auto group-hover:w-6 group-hover:opacity-100",
+                      "group-focus-within:pointer-events-auto group-focus-within:w-6 group-focus-within:opacity-100",
+                      "hover:bg-destructive/10 hover:text-destructive focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
+                    )}
                   >
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+                    <Trash2 className="size-3 shrink-0" />
                   </span>
                 ) : null}
-                <span className="flex items-center justify-between gap-2">
-                  <span className="min-w-0">
-                    <span className="block truncate text-[12px] font-medium text-ink">
-                      {provider.name || "Untitled provider"}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-steel">
-                      {provider.defaultModel || defaultImageModel}
-                    </span>
-                  </span>
-                  {canDelete ? (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Delete ${provider.name || "provider"}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDeleteProvider(provider.id);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key !== "Enter" && event.key !== " ") return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        onDeleteProvider(provider.id);
-                      }}
-                      className={cn(
-                        "pointer-events-none inline-flex h-6 w-0 shrink-0 items-center justify-center overflow-hidden rounded-md text-steel opacity-0",
-                        "transition-[width,opacity,margin] duration-200 ease-out",
-                        "group-hover:pointer-events-auto group-hover:w-6 group-hover:opacity-100",
-                        "group-focus-within:pointer-events-auto group-focus-within:w-6 group-focus-within:opacity-100",
-                        "hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-                      )}
-                    >
-                      <Trash2 className="size-3 shrink-0" />
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            );
-          })}
+              </span>
+            </button>
+          );
+        })}
 
-          <button
-            type="button"
-            onClick={onCreateProvider}
-            className={cn(
-              "flex min-h-18 items-center justify-center rounded-lg border border-dashed border-hairline-soft bg-card transition-colors duration-150 ease-out",
-              "text-steel hover:bg-tint-gray focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-            )}
-            aria-label="Add provider"
-          >
-            <Plus className="size-3.5" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onCreateProvider}
+          className={cn(
+            "flex min-h-18 items-center justify-center rounded-lg border border-dashed border-hairline-soft bg-card transition-colors duration-150 ease-out",
+            "text-steel hover:bg-tint-gray focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
+          )}
+          aria-label="Add provider"
+        >
+          <Plus className="size-3.5" />
+        </button>
+      </div>
 
       <div className="mb-4 flex items-start justify-between gap-4 border-hairline-soft pt-4">
         <div>
@@ -500,17 +509,19 @@ function ProviderSection({
                 id="api-key"
                 type={showApiKey ? "text" : "password"}
                 value={draft.apiKey}
-                onChange={(event) => onUpdateDraft("apiKey", event.target.value)}
+                onChange={(event) =>
+                  onUpdateDraft("apiKey", event.target.value)
+                }
                 placeholder="sk-..."
                 autoComplete="off"
-                className="h-9 pl-3 pr-9 text-[13px] md:text-[12px]"
+                className="h-9 pr-9 pl-3 text-[13px] md:text-[12px]"
               />
               <button
                 type="button"
                 onClick={() => setShowApiKey((prev) => !prev)}
                 aria-label={showApiKey ? "Hide API key" : "Show API key"}
                 aria-pressed={showApiKey}
-                className="absolute right-1 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-steel transition-colors duration-150 ease-out hover:bg-tint-gray hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-primary/15"
+                className="absolute top-1/2 right-1 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-steel transition-colors duration-150 ease-out hover:bg-tint-gray hover:text-ink focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
               >
                 {showApiKey ? (
                   <EyeOff className="size-3.5" />
@@ -581,7 +592,11 @@ function ProviderSection({
               <SelectPositioner>
                 <SelectContent>
                   {modelOptions.map((model) => (
-                    <SelectItem key={model} value={model} className="text-[12px]">
+                    <SelectItem
+                      key={model}
+                      value={model}
+                      className="text-[12px]"
+                    >
                       {model}
                     </SelectItem>
                   ))}
@@ -600,32 +615,48 @@ function ProviderSection({
 }
 
 function AppearanceSection() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
   const options: Array<{
-    value: Theme
-    label: string
-    icon: React.ComponentType<{ className?: string }>
-    description: string
+    value: Theme;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    description: string;
   }> = [
-    { value: "light", label: "Light", icon: Sun, description: "Bright surfaces, default palette." },
-    { value: "dark", label: "Dark", icon: Moon, description: "Dimmed surfaces for low-light." },
-    { value: "system", label: "System", icon: Monitor, description: "Match your OS preference." },
-  ]
+    {
+      value: "light",
+      label: "Light",
+      icon: Sun,
+      description: "Bright surfaces, default palette.",
+    },
+    {
+      value: "dark",
+      label: "Dark",
+      icon: Moon,
+      description: "Dimmed surfaces for low-light.",
+    },
+    {
+      value: "system",
+      label: "System",
+      icon: Monitor,
+      description: "Match your OS preference.",
+    },
+  ];
 
   return (
     <>
       <div className="mb-4">
         <h3 className="text-[12px] font-semibold text-ink">Theme</h3>
         <p className="mt-0.5 text-[11px] leading-4 text-steel">
-          Choose how the workspace looks. System follows your operating system setting.
+          Choose how the workspace looks. System follows your operating system
+          setting.
         </p>
       </div>
 
       <ToggleGroup
         value={[theme]}
         onValueChange={(next) => {
-          const value = next[0]
-          if (value) setTheme(value as Theme)
+          const value = next[0];
+          if (value) setTheme(value as Theme);
         }}
         variant="outline"
         className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3"
@@ -642,19 +673,23 @@ function AppearanceSection() {
           >
             <span className="flex w-full items-center justify-between">
               <Icon className="size-3.5" />
-              {theme === value ? <Check className="size-3 text-primary" /> : null}
+              {theme === value ? (
+                <Check className="size-3 text-primary" />
+              ) : null}
             </span>
             <span className="text-[12px] font-medium">{label}</span>
-            <span className="text-[11px] leading-4 text-steel">{description}</span>
+            <span className="text-[11px] leading-4 text-steel">
+              {description}
+            </span>
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
     </>
-  )
+  );
 }
 
 function ProfileSection() {
-  const { avatarId, setAvatarId } = useUserAvatar()
+  const { avatarId, setAvatarId } = useUserAvatar();
 
   return (
     <>
@@ -671,7 +706,7 @@ function ProfileSection() {
         className="grid grid-cols-3 gap-3 sm:grid-cols-6"
       >
         {userAvatars.map((avatar) => {
-          const isSelected = avatar.id === avatarId
+          const isSelected = avatar.id === avatarId;
           return (
             <button
               key={avatar.id}
@@ -682,7 +717,7 @@ function ProfileSection() {
               onClick={() => setAvatarId(avatar.id)}
               className={cn(
                 "group relative flex aspect-square w-full items-center justify-center rounded-full border bg-card transition-colors duration-150 ease-out",
-                "hover:border-primary/35 focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                "hover:border-primary/35 focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
                 isSelected
                   ? "border-primary/45 ring-2 ring-primary/35 ring-offset-2 ring-offset-background"
                   : "border-hairline-soft",
@@ -695,14 +730,14 @@ function ProfileSection() {
                 className="h-full w-full rounded-full object-cover"
               />
               {isSelected ? (
-                <span className="absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full bg-primary text-card shadow-subtle ring-2 ring-background">
+                <span className="absolute -top-1 -right-1 inline-flex size-4 items-center justify-center rounded-full bg-primary text-card shadow-subtle ring-2 ring-background">
                   <Check className="size-2.5" />
                 </span>
               ) : null}
             </button>
-          )
+          );
         })}
       </div>
     </>
-  )
+  );
 }

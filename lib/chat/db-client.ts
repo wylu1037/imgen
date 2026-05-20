@@ -1,4 +1,4 @@
-import type { ChatMessage, NewChatMessage, ProviderConfig } from "./types"
+import type { ChatMessage, NewChatMessage, ProviderConfig } from "./types";
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS messages (
@@ -36,110 +36,110 @@ const SCHEMA_SQL = `
   );
 
   PRAGMA user_version = 2;
-`
+`;
 
-const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs"
-const ACTIVE_PROVIDER_KEY = "active_provider_id"
+const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs";
+const ACTIVE_PROVIDER_KEY = "active_provider_id";
 
 export interface ChatDb {
-  insert: (msg: NewChatMessage) => Promise<ChatMessage>
-  loadAll: () => Promise<ChatMessage[]>
-  deleteTurn: (turnId: string) => Promise<void>
-  clearAll: () => Promise<void>
-  loadProviders: () => Promise<ProviderConfig[]>
-  upsertProvider: (provider: ProviderConfig) => Promise<void>
-  deleteProvider: (providerId: string) => Promise<void>
-  clearProviders: () => Promise<void>
-  loadActiveProviderId: () => Promise<string | null>
-  setActiveProviderId: (providerId: string | null) => Promise<void>
-  close: () => Promise<void>
-  readonly persistent: boolean
+  insert: (msg: NewChatMessage) => Promise<ChatMessage>;
+  loadAll: () => Promise<ChatMessage[]>;
+  deleteTurn: (turnId: string) => Promise<void>;
+  clearAll: () => Promise<void>;
+  loadProviders: () => Promise<ProviderConfig[]>;
+  upsertProvider: (provider: ProviderConfig) => Promise<void>;
+  deleteProvider: (providerId: string) => Promise<void>;
+  clearProviders: () => Promise<void>;
+  loadActiveProviderId: () => Promise<string | null>;
+  setActiveProviderId: (providerId: string | null) => Promise<void>;
+  close: () => Promise<void>;
+  readonly persistent: boolean;
 }
 
-type Row = Record<string, string | number | null>
+type Row = Record<string, string | number | null>;
 
 type WorkerOutbound = {
-  type: string
-  messageId?: string
-  result?: unknown
-  dbId?: string
-}
+  type: string;
+  messageId?: string;
+  result?: unknown;
+  dbId?: string;
+};
 
 type ExecResult = {
-  resultRows?: Row[]
-}
+  resultRows?: Row[];
+};
 
 type OpenResult = {
-  dbId?: string
-  vfs?: string
-  persistent?: boolean
-}
+  dbId?: string;
+  vfs?: string;
+  persistent?: boolean;
+};
 
 type Pending = {
-  resolve: (value: WorkerOutbound) => void
-  reject: (reason: Error) => void
-}
+  resolve: (value: WorkerOutbound) => void;
+  reject: (reason: Error) => void;
+};
 
 class Promiser {
-  private worker: Worker
-  private pending = new Map<string, Pending>()
-  private counter = 0
-  private readyResolve!: () => void
-  private readyReject!: (err: Error) => void
-  readonly ready: Promise<void>
+  private worker: Worker;
+  private pending = new Map<string, Pending>();
+  private counter = 0;
+  private readyResolve!: () => void;
+  private readyReject!: (err: Error) => void;
+  readonly ready: Promise<void>;
 
   constructor() {
-    this.worker = new Worker(WORKER_URL, { type: "module" })
+    this.worker = new Worker(WORKER_URL, { type: "module" });
     this.ready = new Promise((resolve, reject) => {
-      this.readyResolve = resolve
-      this.readyReject = reject
-    })
-    this.worker.addEventListener("message", this.handleMessage)
+      this.readyResolve = resolve;
+      this.readyReject = reject;
+    });
+    this.worker.addEventListener("message", this.handleMessage);
     this.worker.addEventListener("error", (event) => {
-      const err = new Error(event.message || "sqlite worker error")
-      this.readyReject(err)
+      const err = new Error(event.message || "sqlite worker error");
+      this.readyReject(err);
       for (const pending of this.pending.values()) {
-        pending.reject(err)
+        pending.reject(err);
       }
-      this.pending.clear()
-    })
+      this.pending.clear();
+    });
   }
 
   private handleMessage = (event: MessageEvent) => {
-    const data = event.data as WorkerOutbound | undefined
-    if (!data || typeof data !== "object") return
+    const data = event.data as WorkerOutbound | undefined;
+    if (!data || typeof data !== "object") return;
 
     if (data.type === "sqlite3-api" && data.result === "worker1-ready") {
-      this.readyResolve()
-      return
+      this.readyResolve();
+      return;
     }
 
-    const messageId = data.messageId
-    if (!messageId) return
-    const pending = this.pending.get(messageId)
-    if (!pending) return
-    this.pending.delete(messageId)
+    const messageId = data.messageId;
+    if (!messageId) return;
+    const pending = this.pending.get(messageId);
+    if (!pending) return;
+    this.pending.delete(messageId);
 
     if (data.type === "error") {
-      const result = data.result as { message?: string } | undefined
-      pending.reject(new Error(result?.message || "sqlite worker error"))
-      return
+      const result = data.result as { message?: string } | undefined;
+      pending.reject(new Error(result?.message || "sqlite worker error"));
+      return;
     }
-    pending.resolve(data)
-  }
+    pending.resolve(data);
+  };
 
   send(type: string, args: Record<string, unknown>): Promise<WorkerOutbound> {
-    this.counter += 1
-    const messageId = `${type}#${this.counter}`
+    this.counter += 1;
+    const messageId = `${type}#${this.counter}`;
     return new Promise<WorkerOutbound>((resolve, reject) => {
-      this.pending.set(messageId, { resolve, reject })
-      this.worker.postMessage({ type, args, messageId })
-    })
+      this.pending.set(messageId, { resolve, reject });
+      this.worker.postMessage({ type, args, messageId });
+    });
   }
 
   terminate() {
-    this.worker.removeEventListener("message", this.handleMessage)
-    this.worker.terminate()
+    this.worker.removeEventListener("message", this.handleMessage);
+    this.worker.terminate();
   }
 }
 
@@ -160,12 +160,13 @@ function rowToMessage(row: Row): ChatMessage {
       typeof row.created_at === "number"
         ? row.created_at
         : Number(row.created_at) || 0,
-  }
+  };
 }
 
 function rowToProvider(row: Row): ProviderConfig {
-  const models = parseModels(row.models_json)
-  const defaultModel = String(row.default_model || "").trim() || models[0] || ""
+  const models = parseModels(row.models_json);
+  const defaultModel =
+    String(row.default_model || "").trim() || models[0] || "";
 
   return {
     id: String(row.id),
@@ -177,30 +178,30 @@ function rowToProvider(row: Row): ProviderConfig {
     notes: String(row.notes || ""),
     createdAt: toNumber(row.created_at),
     updatedAt: toNumber(row.updated_at),
-  }
+  };
 }
 
 function parseModels(value: string | number | null): string[] {
-  if (typeof value !== "string") return []
+  if (typeof value !== "string") return [];
   try {
-    const parsed = JSON.parse(value) as unknown
-    if (!Array.isArray(parsed)) return []
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((model): model is string => typeof model === "string")
       .map((model) => model.trim())
-      .filter(Boolean)
+      .filter(Boolean);
   } catch {
-    return []
+    return [];
   }
 }
 
 function toNumber(value: string | number | null): number {
-  return typeof value === "number" ? value : Number(value) || 0
+  return typeof value === "number" ? value : Number(value) || 0;
 }
 
 function getResultRows(response: WorkerOutbound): Row[] {
-  const result = response.result as ExecResult | undefined
-  return Array.isArray(result?.resultRows) ? result.resultRows : []
+  const result = response.result as ExecResult | undefined;
+  return Array.isArray(result?.resultRows) ? result.resultRows : [];
 }
 
 async function selectRows(
@@ -215,71 +216,74 @@ async function selectRows(
     bind,
     rowMode: "object",
     resultRows: [],
-  })
-  return getResultRows(response)
+  });
+  return getResultRows(response);
 }
 
 function generateId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID()
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
   }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 async function openDb(
   promiser: Promiser,
   filename: string,
 ): Promise<{ dbId: string; vfs?: string; persistent?: boolean }> {
-  const response = await promiser.send("open", { filename })
-  const result = response.result as OpenResult | undefined
-  const dbId = result?.dbId ?? response.dbId
+  const response = await promiser.send("open", { filename });
+  const result = response.result as OpenResult | undefined;
+  const dbId = result?.dbId ?? response.dbId;
   if (!dbId) {
-    throw new Error("sqlite worker did not return a dbId")
+    throw new Error("sqlite worker did not return a dbId");
   }
-  return { dbId, vfs: result?.vfs, persistent: result?.persistent }
+  return { dbId, vfs: result?.vfs, persistent: result?.persistent };
 }
 
 export async function openChatDb(): Promise<ChatDb> {
   if (typeof window === "undefined") {
-    throw new Error("openChatDb must be called in the browser")
+    throw new Error("openChatDb must be called in the browser");
   }
 
   const isolated =
     typeof self !== "undefined" &&
-    (self as { crossOriginIsolated?: boolean }).crossOriginIsolated === true
+    (self as { crossOriginIsolated?: boolean }).crossOriginIsolated === true;
 
-  const promiser = new Promiser()
-  await promiser.ready
+  const promiser = new Promiser();
+  await promiser.ready;
 
-  let dbId: string
-  let persistent = false
+  let dbId: string;
+  let persistent = false;
 
   if (isolated) {
     try {
-      const opened = await openDb(promiser, "file:imgen.sqlite?vfs=opfs")
-      dbId = opened.dbId
-      persistent = opened.persistent === true
+      const opened = await openDb(promiser, "file:imgen.sqlite?vfs=opfs");
+      dbId = opened.dbId;
+      persistent = opened.persistent === true;
     } catch (err) {
-      console.warn("[chat-db] OPFS open failed, falling back to :memory:", err)
-      const opened = await openDb(promiser, ":memory:")
-      dbId = opened.dbId
+      console.warn("[chat-db] OPFS open failed, falling back to :memory:", err);
+      const opened = await openDb(promiser, ":memory:");
+      dbId = opened.dbId;
     }
   } else {
     console.warn(
       "[chat-db] crossOriginIsolated is false, falling back to :memory:",
-    )
-    const opened = await openDb(promiser, ":memory:")
-    dbId = opened.dbId
+    );
+    const opened = await openDb(promiser, ":memory:");
+    dbId = opened.dbId;
   }
 
-  await promiser.send("exec", { dbId, sql: SCHEMA_SQL })
+  await promiser.send("exec", { dbId, sql: SCHEMA_SQL });
 
   return {
     persistent,
 
     async insert(msg) {
-      const id = generateId()
-      const createdAt = Date.now()
+      const id = generateId();
+      const createdAt = Date.now();
       await promiser.send("exec", {
         dbId,
         sql: `
@@ -301,8 +305,8 @@ export async function openChatDb(): Promise<ChatDb> {
           msg.error,
           createdAt,
         ],
-      })
-      return { id, createdAt, ...msg }
+      });
+      return { id, createdAt, ...msg };
     },
 
     async loadAll() {
@@ -315,8 +319,8 @@ export async function openChatDb(): Promise<ChatDb> {
           FROM messages
           ORDER BY created_at ASC, id ASC
         `,
-      )
-      return resultRows.map(rowToMessage)
+      );
+      return resultRows.map(rowToMessage);
     },
 
     async deleteTurn(turnId) {
@@ -324,11 +328,11 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         sql: "DELETE FROM messages WHERE turn_id = ?",
         bind: [turnId],
-      })
+      });
     },
 
     async clearAll() {
-      await promiser.send("exec", { dbId, sql: "DELETE FROM messages" })
+      await promiser.send("exec", { dbId, sql: "DELETE FROM messages" });
     },
 
     async loadProviders() {
@@ -341,8 +345,8 @@ export async function openChatDb(): Promise<ChatDb> {
           FROM providers
           ORDER BY updated_at DESC, created_at DESC, id ASC
         `,
-      )
-      return resultRows.map(rowToProvider)
+      );
+      return resultRows.map(rowToProvider);
     },
 
     async upsertProvider(provider) {
@@ -373,7 +377,7 @@ export async function openChatDb(): Promise<ChatDb> {
           provider.createdAt,
           provider.updatedAt,
         ],
-      })
+      });
     },
 
     async deleteProvider(providerId) {
@@ -381,7 +385,7 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         sql: "DELETE FROM providers WHERE id = ?",
         bind: [providerId],
-      })
+      });
     },
 
     async clearProviders() {
@@ -391,7 +395,7 @@ export async function openChatDb(): Promise<ChatDb> {
           DELETE FROM providers;
           DELETE FROM app_settings WHERE key = '${ACTIVE_PROVIDER_KEY}';
         `,
-      })
+      });
     },
 
     async loadActiveProviderId() {
@@ -400,9 +404,9 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         "SELECT value FROM app_settings WHERE key = ? LIMIT 1",
         [ACTIVE_PROVIDER_KEY],
-      )
-      const value = resultRows[0]?.value
-      return typeof value === "string" && value.trim() ? value : null
+      );
+      const value = resultRows[0]?.value;
+      return typeof value === "string" && value.trim() ? value : null;
     },
 
     async setActiveProviderId(providerId) {
@@ -411,8 +415,8 @@ export async function openChatDb(): Promise<ChatDb> {
           dbId,
           sql: "DELETE FROM app_settings WHERE key = ?",
           bind: [ACTIVE_PROVIDER_KEY],
-        })
-        return
+        });
+        return;
       }
 
       await promiser.send("exec", {
@@ -423,15 +427,15 @@ export async function openChatDb(): Promise<ChatDb> {
           ON CONFLICT(key) DO UPDATE SET value = excluded.value
         `,
         bind: [ACTIVE_PROVIDER_KEY, providerId],
-      })
+      });
     },
 
     async close() {
       try {
-        await promiser.send("close", { dbId })
+        await promiser.send("close", { dbId });
       } finally {
-        promiser.terminate()
+        promiser.terminate();
       }
     },
-  }
+  };
 }

@@ -1,14 +1,14 @@
-import Link from "next/link"
-import { Sparkles } from "lucide-react"
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button";
 
 const statTiles: StatTileProps[] = [
   { tone: "lavender", label: "Model", value: "Your choice" },
   { tone: "peach", label: "Storage", value: "On-device" },
   { tone: "mint", label: "Privacy", value: "Key stays local" },
   { tone: "sky", label: "Cost", value: "Pay per image" },
-]
+];
 
 export default function Home() {
   return (
@@ -16,14 +16,14 @@ export default function Home() {
       <section className="grid gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-end lg:py-16">
         <div className="max-w-3xl">
           <div
-            className="reveal mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-micro-uppercase text-steel shadow-subtle"
+            className="reveal text-micro-uppercase mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-steel shadow-subtle"
             style={{ ["--reveal-delay" as string]: "60" }}
           >
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-70 animate-pulse-soft" />
+              <span className="animate-pulse-soft absolute inline-flex h-full w-full rounded-full bg-primary opacity-70" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
-            <Sparkles className="h-3 w-3 text-primary animate-float-soft" />
+            <Sparkles className="animate-float-soft h-3 w-3 text-primary" />
             Configurable image API
           </div>
           <h1
@@ -33,7 +33,7 @@ export default function Home() {
             AI Image Workspace<span className="text-primary">.</span>
           </h1>
           <p
-            className="reveal mt-6 max-w-xl text-subtitle text-slate"
+            className="reveal text-subtitle mt-6 max-w-xl text-slate"
             style={{ ["--reveal-delay" as string]: "260" }}
           >
             Bring your own provider. Generate images in a focused chat, with
@@ -68,7 +68,7 @@ export default function Home() {
         </div>
       </section>
     </main>
-  )
+  );
 }
 
 const tileToneMap = {
@@ -76,16 +76,16 @@ const tileToneMap = {
   peach: { bg: "bg-tint-peach", text: "text-brand-orange-deep" },
   mint: { bg: "bg-tint-mint", text: "text-brand-green" },
   sky: { bg: "bg-tint-sky", text: "text-link-blue-pressed" },
-} as const
+} as const;
 
 type StatTileProps = {
-  label: string
-  value: string
-  tone: keyof typeof tileToneMap
-}
+  label: string;
+  value: string;
+  tone: keyof typeof tileToneMap;
+};
 
 function StatTile({ label, value, tone }: StatTileProps) {
-  const palette = tileToneMap[tone]
+  const palette = tileToneMap[tone];
   return (
     <div
       className={`group rounded-md ${palette.bg} px-4 py-3 transition-transform duration-300 ease-out hover:-translate-y-0.5`}
@@ -95,5 +95,5 @@ function StatTile({ label, value, tone }: StatTileProps) {
       </div>
       <div className="mt-1.5 text-sm font-semibold text-charcoal">{value}</div>
     </div>
-  )
+  );
 }

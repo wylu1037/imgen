@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ArrowUp, Dices } from "lucide-react"
+import * as React from "react";
+import { ArrowUp, Dices } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupTextarea,
-} from "@/components/ui/input-group"
-import { Spinner } from "@/components/ui/spinner"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/input-group";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import {
   pickRandomPrompt,
   qualityOptions,
   sizeOptions,
   type OptionItem,
-} from "@/lib/chat/constants"
+} from "@/lib/chat/constants";
 
-import { ParamChip } from "./param-chip"
-import { useAutosizeTextarea } from "../_hooks/use-autosize-textarea"
+import { ParamChip } from "./param-chip";
+import { useAutosizeTextarea } from "../_hooks/use-autosize-textarea";
 
 type ComposerProps = {
-  draft: string
-  onDraftChange: (next: string) => void
-  model: string
-  modelOptions: OptionItem[]
-  onModelChange: (next: string) => void
-  size: string
-  onSizeChange: (next: string) => void
-  quality: string
-  onQualityChange: (next: string) => void
-  onSubmit: () => void
-  isGenerating: boolean
-  isReady: boolean
-}
+  draft: string;
+  onDraftChange: (next: string) => void;
+  model: string;
+  modelOptions: OptionItem[];
+  onModelChange: (next: string) => void;
+  size: string;
+  onSizeChange: (next: string) => void;
+  quality: string;
+  onQualityChange: (next: string) => void;
+  onSubmit: () => void;
+  isGenerating: boolean;
+  isReady: boolean;
+};
 
 export function Composer({
   draft,
@@ -51,15 +51,15 @@ export function Composer({
   isGenerating,
   isReady,
 }: ComposerProps) {
-  const textareaRef = useAutosizeTextarea(draft)
-  const canSubmit = !isGenerating && draft.trim().length > 0 && isReady
+  const textareaRef = useAutosizeTextarea(draft);
+  const canSubmit = !isGenerating && draft.trim().length > 0 && isReady;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== "Enter") return
-    if (event.shiftKey) return
-    event.preventDefault()
-    if (canSubmit) onSubmit()
-  }
+    if (event.key !== "Enter") return;
+    if (event.shiftKey) return;
+    event.preventDefault();
+    if (canSubmit) onSubmit();
+  };
 
   return (
     <InputGroup
@@ -102,9 +102,9 @@ export function Composer({
         rows={1}
         disabled={isGenerating}
         className={cn(
-          "min-h-11 max-h-48 px-4 py-3 text-[13px] leading-relaxed",
+          "max-h-48 min-h-11 px-4 py-3 text-[13px] leading-relaxed",
           "font-serif tracking-[0.005em]",
-          "placeholder:italic placeholder:font-serif placeholder:text-stone/90",
+          "placeholder:font-serif placeholder:text-stone/90 placeholder:italic",
         )}
       />
 
@@ -135,5 +135,5 @@ export function Composer({
         </Button>
       </InputGroupAddon>
     </InputGroup>
-  )
+  );
 }

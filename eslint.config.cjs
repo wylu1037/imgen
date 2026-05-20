@@ -4,6 +4,6 @@ const eslintConfig = [
     ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
   },
   ...require("eslint-config-next"),
-]
+];
 
-module.exports = eslintConfig
+module.exports = eslintConfig;

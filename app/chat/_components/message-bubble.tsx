@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Dialog } from "@base-ui/react/dialog"
-import Image from "next/image"
+import * as React from "react";
+import { Dialog } from "@base-ui/react/dialog";
+import Image from "next/image";
 import {
   AlertCircle,
   Check,
@@ -13,20 +13,20 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Spinner } from "@/components/ui/spinner"
-import { cn } from "@/lib/utils"
-import type { ChatMessage } from "@/lib/chat/types"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import type { ChatMessage } from "@/lib/chat/types";
 
-import { AssistantAvatar, UserAvatar } from "./message-avatar"
+import { AssistantAvatar, UserAvatar } from "./message-avatar";
 
 type PendingTurn = {
-  turnId: string
-  prompt: string
-  model: string
-  size: string
-  quality: string
-}
+  turnId: string;
+  prompt: string;
+  model: string;
+  size: string;
+  quality: string;
+};
 
 type UserBubbleProps = {
   message: ChatMessage;
@@ -39,17 +39,18 @@ type UserBubbleProps = {
 };
 
 function formatMetaLine(message: ChatMessage): string {
-  const parts: string[] = []
-  if (message.model) parts.push(message.model)
-  if (message.size && message.size !== "auto") parts.push(message.size)
-  if (message.quality && message.quality !== "auto") parts.push(message.quality)
-  return parts.join(" · ")
+  const parts: string[] = [];
+  if (message.model) parts.push(message.model);
+  if (message.size && message.size !== "auto") parts.push(message.size);
+  if (message.quality && message.quality !== "auto")
+    parts.push(message.quality);
+  return parts.join(" · ");
 }
 
 function imageExtension(imageData: string): string {
-  const match = /^data:image\/([a-zA-Z0-9.+-]+);/.exec(imageData)
-  if (!match) return "png"
-  return match[1] === "jpeg" ? "jpg" : match[1]
+  const match = /^data:image\/([a-zA-Z0-9.+-]+);/.exec(imageData);
+  if (!match) return "png";
+  return match[1] === "jpeg" ? "jpg" : match[1];
 }
 
 function MessageActionButton({
@@ -58,10 +59,10 @@ function MessageActionButton({
   className,
   children,
 }: {
-  label: string
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
-  className?: string
-  children: React.ReactNode
+  label: string;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  className?: string;
+  children: React.ReactNode;
 }) {
   return (
     <button
@@ -70,14 +71,14 @@ function MessageActionButton({
       onClick={onClick}
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded-md border border-hairline-soft bg-card/95 text-steel shadow-subtle",
-        "opacity-0 transition-all duration-150 ease-out hover:bg-secondary hover:text-ink focus:opacity-100 focus:outline-none focus:ring-[3px] focus:ring-primary/15",
-        "group-hover:opacity-100 group-focus-within:opacity-100",
+        "opacity-0 transition-all duration-150 ease-out hover:bg-secondary hover:text-ink focus:opacity-100 focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
+        "group-focus-within:opacity-100 group-hover:opacity-100",
         className,
       )}
     >
       {children}
     </button>
-  )
+  );
 }
 
 export function UserBubble({
@@ -150,7 +151,7 @@ export function UserBubble({
             "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
         )}
       >
-        <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
+        <p className="wrap-break-word whitespace-pre-wrap">{message.content}</p>
       </div>
       <UserAvatar avatarId={avatarId} className="self-start" />
     </div>
@@ -158,7 +159,7 @@ export function UserBubble({
 }
 
 export function AssistantBubble({ message }: { message: ChatMessage }) {
-  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 
   if (message.error) {
     return (
@@ -166,33 +167,29 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
         <AssistantAvatar className="self-start" />
         <div className="max-w-[75%]">
           <Alert variant="destructive" className="border-destructive/30">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0">
-                <AlertTitle>Generation failed</AlertTitle>
-                <AlertDescription className="wrap-break-word">
-                  {message.error}
-                </AlertDescription>
-              </div>
-            </div>
+            <AlertCircle />
+            <AlertTitle>Generation failed</AlertTitle>
+            <AlertDescription className="wrap-break-word">
+              {message.error}
+            </AlertDescription>
           </Alert>
         </div>
       </div>
-    )
+    );
   }
 
-  const metaLine = formatMetaLine(message)
-  const imageAlt = message.revisedPrompt ?? "Generated image"
+  const metaLine = formatMetaLine(message);
+  const imageAlt = message.revisedPrompt ?? "Generated image";
 
   const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    if (!message.imageData) return
+    event.stopPropagation();
+    if (!message.imageData) return;
 
-    const link = document.createElement("a")
-    link.href = message.imageData
-    link.download = `imgen-${message.id}.${imageExtension(message.imageData)}`
-    link.click()
-  }
+    const link = document.createElement("a");
+    link.href = message.imageData;
+    link.download = `imgen-${message.id}.${imageExtension(message.imageData)}`;
+    link.click();
+  };
 
   return (
     <div className="flex justify-start gap-2">
@@ -204,7 +201,7 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(true)}
-                className="block w-full cursor-zoom-in focus:outline-none focus:ring-[3px] focus:ring-primary/15"
+                className="block w-full cursor-zoom-in focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
                 aria-label="Open generated image preview"
               >
                 <Image
@@ -216,15 +213,18 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
                   className="h-auto w-full"
                 />
               </button>
-              <div className="absolute right-2 top-2 flex gap-1">
-                <MessageActionButton label="Download image" onClick={handleDownload}>
+              <div className="absolute top-2 right-2 flex gap-1">
+                <MessageActionButton
+                  label="Download image"
+                  onClick={handleDownload}
+                >
                   <Download className="h-3.5 w-3.5" />
                 </MessageActionButton>
                 <MessageActionButton
                   label="Open generated image preview"
                   onClick={(event) => {
-                    event.stopPropagation()
-                    setIsPreviewOpen(true)
+                    event.stopPropagation();
+                    setIsPreviewOpen(true);
                   }}
                 >
                   <Expand className="h-3.5 w-3.5" />
@@ -233,8 +233,10 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
             </div>
             <Dialog.Portal>
               <Dialog.Backdrop className="fixed inset-0 z-40 bg-ink/70 backdrop-blur-sm transition-opacity duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
-              <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(92vw,1100px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-card p-2 shadow-modal outline-none transition-[opacity,transform] duration-200 ease-out data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
-                <Dialog.Title className="sr-only">Generated image preview</Dialog.Title>
+              <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[min(92vw,1100px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-card p-2 shadow-modal transition-[opacity,transform] duration-200 ease-out outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+                <Dialog.Title className="sr-only">
+                  Generated image preview
+                </Dialog.Title>
                 <Image
                   src={message.imageData}
                   alt={imageAlt}
@@ -260,19 +262,19 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
         ) : null}
       </div>
     </div>
-  )
+  );
 }
 
 export function PendingBubble({ turn }: { turn: PendingTurn }) {
-  const [elapsed, setElapsed] = React.useState(0)
+  const [elapsed, setElapsed] = React.useState(0);
 
   React.useEffect(() => {
-    const start = Date.now()
+    const start = Date.now();
     const id = window.setInterval(() => {
-      setElapsed(Math.floor((Date.now() - start) / 1000))
-    }, 1000)
-    return () => window.clearInterval(id)
-  }, [])
+      setElapsed(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
 
   return (
     <div className="flex justify-start gap-2">
@@ -284,10 +286,10 @@ export function PendingBubble({ turn }: { turn: PendingTurn }) {
       >
         <Spinner className="h-3.5 w-3.5 text-stone" />
         <span className="text-[12px] text-steel">Generating image</span>
-        <span className="text-[12px] tabular-nums text-stone">{elapsed}s</span>
+        <span className="text-[12px] text-stone tabular-nums">{elapsed}s</span>
       </div>
     </div>
-  )
+  );
 }
 
-export type { PendingTurn }
+export type { PendingTurn };

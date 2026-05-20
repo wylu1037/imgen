@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { defaultUserAvatarId, getUserAvatar, userAvatars } from "@/lib/avatars"
+import { defaultUserAvatarId, getUserAvatar, userAvatars } from "@/lib/avatars";
 
-const STORAGE_KEY = "imgen-user-avatar"
+const STORAGE_KEY = "imgen-user-avatar";
 
 function readStoredAvatarId(): string {
-  if (typeof window === "undefined") return defaultUserAvatarId
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (!stored) return defaultUserAvatarId
+  if (typeof window === "undefined") return defaultUserAvatarId;
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  if (!stored) return defaultUserAvatarId;
   return userAvatars.some((avatar) => avatar.id === stored)
     ? stored
-    : defaultUserAvatarId
+    : defaultUserAvatarId;
 }
 
 export function useUserAvatar() {
   const [avatarId, setAvatarIdState] = React.useState<string>(() =>
     readStoredAvatarId(),
-  )
+  );
 
   const setAvatarId = React.useCallback((nextId: string) => {
-    setAvatarIdState(nextId)
+    setAvatarIdState(nextId);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, nextId)
+      window.localStorage.setItem(STORAGE_KEY, nextId);
     }
-  }, [])
+  }, []);
 
-  const avatar = React.useMemo(() => getUserAvatar(avatarId), [avatarId])
+  const avatar = React.useMemo(() => getUserAvatar(avatarId), [avatarId]);
 
-  return { avatarId, avatar, setAvatarId }
+  return { avatarId, avatar, setAvatarId };
 }

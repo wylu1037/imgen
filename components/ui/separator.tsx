@@ -8,8 +8,8 @@ function Separator({ className, ...props }: SeparatorPrimitive.Props) {
     <SeparatorPrimitive
       data-slot="separator"
       className={cn(
-        "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-        className
+        "shrink-0 bg-border data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+        className,
       )}
       {...props}
     />
