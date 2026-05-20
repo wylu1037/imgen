@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Sparkles } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button-variants"
+import { buttonVariants } from "@/components/ui/button"
 
 const statTiles: StatTileProps[] = [
   { tone: "lavender", label: "Model", value: "Your choice" },

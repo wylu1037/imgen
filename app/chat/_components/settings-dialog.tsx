@@ -35,6 +35,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectPositioner,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -577,13 +578,15 @@ function ProviderSection({
               >
                 <SelectValue placeholder="Load models first" />
               </SelectTrigger>
-              <SelectContent>
-                {modelOptions.map((model) => (
-                  <SelectItem key={model} value={model} className="text-[12px]">
-                    {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              <SelectPositioner>
+                <SelectContent>
+                  {modelOptions.map((model) => (
+                    <SelectItem key={model} value={model} className="text-[12px]">
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </SelectPositioner>
             </Select>
 
             <p className="text-[11px] leading-4 text-destructive">
@@ -619,13 +622,13 @@ function AppearanceSection() {
       </div>
 
       <ToggleGroup
-        value={theme}
+        value={[theme]}
         onValueChange={(next) => {
-          if (next) setTheme(next as Theme)
+          const value = next[0]
+          if (value) setTheme(value as Theme)
         }}
         variant="outline"
-        spacing={8}
-        className="grid w-full grid-cols-1 sm:grid-cols-3"
+        className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3"
       >
         {options.map(({ value, label, icon: Icon, description }) => (
           <ToggleGroupItem

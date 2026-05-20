@@ -136,7 +136,7 @@ export function ChatSidebar({
               aria-label="Open provider settings"
               className="w-full justify-start text-[12px] text-charcoal"
             >
-              <Settings className="size-3" />
+              <Settings className="size-4" />
             </Button>
           }
         />
