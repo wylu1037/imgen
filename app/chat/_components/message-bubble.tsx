@@ -18,6 +18,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import type { ChatMessage } from "@/lib/chat/types"
 
+import { AssistantAvatar, UserAvatar } from "./message-avatar"
+
 type PendingTurn = {
   turnId: string
   prompt: string
@@ -141,13 +143,14 @@ export function UserBubble({
       </div>
       <div
         className={cn(
-          "max-w-[80%] rounded-lg bg-tint-lavender px-3.5 py-2.5 text-[14px] leading-relaxed text-brand-purple-800",
+          "max-w-[75%] rounded-lg bg-tint-lavender px-3.5 py-2.5 text-[14px] leading-relaxed text-brand-purple-800",
           selected &&
             "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
         )}
       >
         <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
       </div>
+      <UserAvatar className="self-start" />
     </div>
   );
 }
@@ -157,8 +160,9 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
 
   if (message.error) {
     return (
-      <div className="flex justify-start">
-        <div className="max-w-[80%]">
+      <div className="flex justify-start gap-2">
+        <AssistantAvatar className="self-start" />
+        <div className="max-w-[75%]">
           <Alert variant="destructive" className="border-destructive/30">
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -189,8 +193,9 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
   }
 
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[80%] rounded-lg border border-border bg-card p-3">
+    <div className="flex justify-start gap-2">
+      <AssistantAvatar className="self-start" />
+      <div className="max-w-[75%] rounded-lg border border-border bg-card p-3">
         {message.imageData ? (
           <Dialog.Root open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
             <div className="group relative overflow-hidden rounded-md bg-surface-soft">
@@ -257,8 +262,19 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
 }
 
 export function PendingBubble({ turn }: { turn: PendingTurn }) {
+  const [elapsed, setElapsed] = React.useState(0)
+
+  React.useEffect(() => {
+    const start = Date.now()
+    const id = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000))
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
   return (
-    <div className="flex justify-start">
+    <div className="flex justify-start gap-2">
+      <AssistantAvatar className="self-start" />
       <div
         className={cn(
           "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5",
@@ -266,15 +282,7 @@ export function PendingBubble({ turn }: { turn: PendingTurn }) {
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin text-stone" />
         <span className="text-[12px] text-steel">Generating image</span>
-        <span className="flex items-center gap-1">
-          {[0, 180, 360].map((delay) => (
-            <span
-              key={delay}
-              className="h-1.5 w-1.5 rounded-full bg-stone animate-pulse-soft"
-              style={{ animationDelay: `${delay}ms` }}
-            />
-          ))}
-        </span>
+        <span className="text-[12px] tabular-nums text-stone">{elapsed}s</span>
       </div>
     </div>
   )
