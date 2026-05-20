@@ -30,6 +30,7 @@ type PendingTurn = {
 
 type UserBubbleProps = {
   message: ChatMessage;
+  avatarId?: string | null;
   onEdit: (prompt: string) => void;
   onDeleteTurn: (turnId: string) => void;
   selected: boolean;
@@ -81,6 +82,7 @@ function MessageActionButton({
 
 export function UserBubble({
   message,
+  avatarId,
   onEdit,
   onDeleteTurn,
   selected,
@@ -150,7 +152,7 @@ export function UserBubble({
       >
         <p className="whitespace-pre-wrap wrap-break-word">{message.content}</p>
       </div>
-      <UserAvatar className="self-start" />
+      <UserAvatar avatarId={avatarId} className="self-start" />
     </div>
   );
 }

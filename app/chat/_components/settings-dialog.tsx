@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Sun,
   Trash2,
+  UserRound,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button"
@@ -39,6 +40,8 @@ import {
 } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useTheme, type Theme } from "@/hooks/use-theme"
+import { useUserAvatar } from "@/hooks/use-user-avatar"
+import { userAvatars } from "@/lib/avatars"
 import { defaultImageModel } from "@/lib/chat/constants"
 import type { ProviderConfig } from "@/lib/chat/types"
 import { cn } from "@/lib/utils"
@@ -68,13 +71,14 @@ type ModelsResponse = {
   error?: string
 }
 
-type Section = "provider" | "appearance"
+type Section = "profile" | "provider" | "appearance"
 
 const SECTIONS: Array<{
   id: Section
   label: string
   icon: React.ComponentType<{ className?: string }>
 }> = [
+  { id: "profile", label: "Profile", icon: UserRound },
   { id: "provider", label: "Provider", icon: Plug },
   { id: "appearance", label: "Appearance", icon: Palette },
 ]
@@ -300,8 +304,10 @@ export function SettingsDialog({
                   onUpdateDraft={updateDraft}
                   onLoadModels={handleLoadModels}
                 />
-              ) : (
+              ) : section === "appearance" ? (
                 <AppearanceSection />
+              ) : (
+                <ProfileSection />
               )}
             </div>
           </ScrollArea>
@@ -639,6 +645,60 @@ function AppearanceSection() {
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+    </>
+  )
+}
+
+function ProfileSection() {
+  const { avatarId, setAvatarId } = useUserAvatar()
+
+  return (
+    <>
+      <div className="mb-4">
+        <h3 className="text-[12px] font-semibold text-ink">Avatar</h3>
+        <p className="mt-0.5 text-[11px] leading-4 text-steel">
+          Pick the avatar shown beside your messages. Saved to this browser.
+        </p>
+      </div>
+
+      <div
+        role="radiogroup"
+        aria-label="User avatar"
+        className="grid grid-cols-3 gap-3 sm:grid-cols-6"
+      >
+        {userAvatars.map((avatar) => {
+          const isSelected = avatar.id === avatarId
+          return (
+            <button
+              key={avatar.id}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              aria-label={avatar.label}
+              onClick={() => setAvatarId(avatar.id)}
+              className={cn(
+                "group relative flex aspect-square w-full items-center justify-center rounded-full border bg-card transition-colors duration-150 ease-out",
+                "hover:border-primary/35 focus:outline-none focus:ring-[3px] focus:ring-primary/15",
+                isSelected
+                  ? "border-primary/45 ring-2 ring-primary/35 ring-offset-2 ring-offset-background"
+                  : "border-hairline-soft",
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatar.src}
+                alt=""
+                className="h-full w-full rounded-full object-cover"
+              />
+              {isSelected ? (
+                <span className="absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full bg-primary text-card shadow-subtle ring-2 ring-background">
+                  <Check className="size-2.5" />
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
     </>
   )
 }

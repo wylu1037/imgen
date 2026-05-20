@@ -5,6 +5,7 @@ import * as React from "react"
 import { Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useUserAvatar } from "@/hooks/use-user-avatar"
 import type { ChatMessage } from "@/lib/chat/types"
 
 import {
@@ -46,6 +47,7 @@ export function MessageList({
 }: MessageListProps) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
   const bottomRef = React.useRef<HTMLDivElement | null>(null);
+  const { avatarId } = useUserAvatar();
   const selectedCount = selectedTurnIds.size;
   const selectionMode = selectedCount > 0;
 
@@ -93,6 +95,7 @@ export function MessageList({
             <UserBubble
               key={message.id}
               message={message}
+              avatarId={avatarId}
               onEdit={onEditPrompt}
               onDeleteTurn={onDeleteTurn}
               selected={selectedTurnIds.has(message.turnId)}
