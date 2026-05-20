@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Sparkles } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button-variants"
 
 const statTiles: StatTileProps[] = [
   { tone: "lavender", label: "Model", value: "Your choice" },
@@ -44,21 +44,18 @@ export default function Home() {
             className="reveal mt-7 flex flex-wrap items-center gap-3"
             style={{ ["--reveal-delay" as string]: "320" }}
           >
-            <Button asChild size="lg">
-              <Link href="/chat">
-                <Sparkles />
-                Start creating
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <a
-                href="https://platform.openai.com/docs/api-reference/images"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View API docs
-              </a>
-            </Button>
+            <Link href="/chat" className={buttonVariants({ size: "lg" })}>
+              <Sparkles />
+              Start creating
+            </Link>
+            <a
+              href="https://platform.openai.com/docs/api-reference/images"
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ variant: "outline", size: "lg" })}
+            >
+              View API docs
+            </a>
           </div>
         </div>
         <div

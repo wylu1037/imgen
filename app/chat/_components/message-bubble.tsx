@@ -9,12 +9,12 @@ import {
   Copy,
   Download,
   Expand,
-  Loader2,
   Pencil,
   Trash2,
 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import type { ChatMessage } from "@/lib/chat/types"
 
@@ -282,7 +282,7 @@ export function PendingBubble({ turn }: { turn: PendingTurn }) {
           "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5",
         )}
       >
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-stone" />
+        <Spinner className="h-3.5 w-3.5 text-stone" />
         <span className="text-[12px] text-steel">Generating image</span>
         <span className="text-[12px] tabular-nums text-stone">{elapsed}s</span>
       </div>

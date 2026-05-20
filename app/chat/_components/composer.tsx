@@ -1,10 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { ArrowUp, Dices, Loader2 } from "lucide-react"
+import { ArrowUp, Dices } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from "@/components/ui/input-group"
+import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import {
   pickRandomPrompt,
@@ -56,15 +62,14 @@ export function Composer({
   }
 
   return (
-    <div
+    <InputGroup
       className={cn(
-        "rounded-2xl border border-hairline-strong bg-card",
-        "shadow-subtle",
+        "rounded-2xl border-hairline-strong bg-card shadow-subtle",
         "focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15",
         "transition-all duration-150 ease-out",
       )}
     >
-      <div className="flex flex-wrap items-center gap-2 px-3 pt-3">
+      <InputGroupAddon align="block-start" className="gap-2 pt-3">
         <ParamChip
           ariaLabel="Model"
           value={model}
@@ -86,37 +91,34 @@ export function Composer({
           options={qualityOptions}
           disabled={isGenerating}
         />
-      </div>
+      </InputGroupAddon>
 
-      <Textarea
+      <InputGroupTextarea
         ref={textareaRef}
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Describe the image you want to generate…"
         rows={1}
+        disabled={isGenerating}
         className={cn(
-          "min-h-11 max-h-48 resize-none border-0 bg-transparent shadow-none",
-          "focus-visible:ring-0 focus-visible:border-0",
-          "px-4 py-3 text-[13px] md:text-[13px] leading-relaxed",
+          "min-h-11 max-h-48 px-4 py-3 text-[13px] leading-relaxed",
           "font-serif tracking-[0.005em]",
           "placeholder:italic placeholder:font-serif placeholder:text-stone/90",
         )}
-        disabled={isGenerating}
       />
 
-      <div className="flex items-center justify-between gap-2 px-3 pb-3">
-        <Button
-          type="button"
+      <InputGroupAddon align="block-end" className="justify-between pb-3">
+        <InputGroupButton
+          size="icon-sm"
           variant="ghost"
-          size="sm"
           onClick={() => onDraftChange(pickRandomPrompt(draft))}
           disabled={isGenerating}
           aria-label="Surprise me with a sample prompt"
-          className="text-[12px] text-steel"
+          className="text-steel"
         >
-          <Dices className="size-3.5" />
-        </Button>
+          <Dices />
+        </InputGroupButton>
         <Button
           type="button"
           size="icon"
@@ -126,12 +128,12 @@ export function Composer({
           className="h-9 w-9 rounded-full"
         >
           {isGenerating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner className="h-4 w-4" />
           ) : (
             <ArrowUp className="h-4 w-4" />
           )}
         </Button>
-      </div>
-    </div>
-  );
+      </InputGroupAddon>
+    </InputGroup>
+  )
 }

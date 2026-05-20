@@ -233,7 +233,7 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent
         showCloseButton={false}
         className="grid h-[min(620px,calc(100vh-4rem))] w-[min(820px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0 text-[12px] sm:max-w-none md:grid-cols-[200px_1fr]"
@@ -313,16 +313,18 @@ export function SettingsDialog({
           </ScrollArea>
 
           <DialogFooter className="flex items-center justify-end gap-2 border-t border-hairline-soft bg-card px-5 py-3">
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 text-[12px]"
-              >
-                Cancel
-              </Button>
-            </DialogClose>
+            <DialogClose
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-[12px]"
+                >
+                  Cancel
+                </Button>
+              }
+            />
             {section === "provider" ? (
               <Button
                 type="button"
@@ -617,7 +619,6 @@ function AppearanceSection() {
       </div>
 
       <ToggleGroup
-        type="single"
         value={theme}
         onValueChange={(next) => {
           if (next) setTheme(next as Theme)

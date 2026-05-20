@@ -92,7 +92,7 @@ export function ChatSidebar({
                         onClick={() => handleSelectTurn(turn.turnId)}
                         isActive={selectedTurnId === turn.turnId}
                         className={cn(
-                          "h-auto items-start py-2 text-[13px] leading-snug text-charcoal",
+                          "h-auto items-start py-2 text-[12px] leading-snug text-charcoal",
                           "data-[active=true]:bg-tint-lavender data-[active=true]:text-brand-purple-800",
                         )}
                       >
@@ -111,7 +111,7 @@ export function ChatSidebar({
             <span className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-tint-cream text-stone">
               <ImageIcon className="h-4 w-4" />
             </span>
-            <p className="text-[13px] text-steel">
+            <p className="text-[11px] leading-4 text-steel">
               Your generated images will appear here, grouped by date.
             </p>
           </div>
@@ -134,10 +134,9 @@ export function ChatSidebar({
               variant="ghost"
               size="sm"
               aria-label="Open provider settings"
-              className="w-full justify-start text-[13px] text-charcoal"
+              className="w-full justify-start text-[12px] text-charcoal"
             >
-              <Settings className="h-3.5 w-3.5" />
-              Settings
+              <Settings className="size-3" />
             </Button>
           }
         />
