@@ -81,7 +81,11 @@ export async function POST(request: Request) {
     const client = new OpenAI({
       apiKey,
       baseURL: baseURL || undefined,
+      timeout: 90_000,
+      maxRetries: 0,
     });
+    const requestURL = `${baseURL || "https://api.openai.com/v1"}/images/generations`;
+    console.log("[/api/generate] request", { url: requestURL, model });
     const response = await client.images.generate({
       model,
       prompt,
@@ -140,6 +144,7 @@ export async function POST(request: Request) {
       revisedPrompt: image?.revised_prompt,
     });
   } catch (error) {
+    console.error(error);
     const status =
       typeof error === "object" &&
       error &&
