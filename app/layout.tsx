@@ -13,10 +13,31 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteDescription =
+  "Generate images through a configurable OpenAI image API workspace.";
+
 export const metadata: Metadata = {
-  title: "AI Image Workspace",
-  description:
-    "Generate images through a configurable OpenAI image API workspace.",
+  metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+  title: {
+    default: "Imgen — AI Image Workspace",
+    template: "%s · Imgen",
+  },
+  description: siteDescription,
+  applicationName: "Imgen",
+  openGraph: {
+    type: "website",
+    siteName: "Imgen",
+    title: "Imgen — AI Image Workspace",
+    description: siteDescription,
+    url: siteUrl,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Imgen — AI Image Workspace",
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({
