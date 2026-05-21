@@ -77,6 +77,15 @@ export default function ChatPage() {
     return models.map((model) => ({ label: model, value: model }));
   }, [activeProvider]);
 
+  const providerOptions = React.useMemo<OptionItem[]>(
+    () =>
+      providers.map((provider) => ({
+        label: provider.name,
+        value: provider.id,
+      })),
+    [providers],
+  );
+
   const selectedModel = React.useMemo(() => {
     if (!activeProvider) return model;
     return activeProvider.models.includes(model)
@@ -321,6 +330,9 @@ export default function ChatPage() {
             <Composer
               draft={draft}
               onDraftChange={setDraft}
+              provider={activeProviderId ?? ""}
+              providerOptions={providerOptions}
+              onProviderChange={setActiveProviderId}
               model={selectedModel}
               modelOptions={providerModelOptions}
               onModelChange={setModel}

@@ -25,6 +25,7 @@ export function ParamChip({
   disabled,
 }: ParamChipProps) {
   const selected = options.find((option) => option.value === value);
+  const hasSelectedValue = Boolean(selected);
 
   return (
     <Select.Root
@@ -37,18 +38,28 @@ export function ParamChip({
       <Select.Trigger
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex h-7 items-center gap-1.5 rounded-md border border-hairline-strong bg-card px-2.5 text-sm! font-medium text-charcoal",
-          "transition-colors duration-150 ease-out",
+          "inline-flex h-6 items-center gap-1 rounded-md border border-hairline-soft px-1.5 text-[10px] leading-none font-medium tracking-[-0.01em] text-slate",
+          "shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition-colors duration-150 ease-out",
+          "hover:border-hairline-strong hover:bg-card hover:text-charcoal",
           "focus:border-primary focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
-          "data-disabled:cursor-not-allowed data-disabled:opacity-50",
+          "data-disabled:cursor-not-allowed data-disabled:opacity-45",
         )}
       >
         {icon ? <span className="text-stone">{icon}</span> : null}
         <Select.Value>
-          <span className="truncate">{selected?.label ?? value}</span>
+          <span
+            className={cn(
+              "inline-flex max-w-full min-w-0 transition-all duration-150",
+              hasSelectedValue
+                ? "font-semibold tracking-[-0.015em] text-charcoal"
+                : "text-slate",
+            )}
+          >
+            <span className="truncate leading-none">{selected?.label ?? value}</span>
+          </span>
         </Select.Value>
         <Select.Icon>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-stone" />
+          <ChevronDown className="h-3 w-3 shrink-0 text-stone" />
         </Select.Icon>
       </Select.Trigger>
       <Select.Portal>
@@ -59,7 +70,7 @@ export function ParamChip({
                 key={option.value}
                 value={option.value}
                 className={cn(
-                  "grid cursor-default grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none select-none",
+                  "grid cursor-default grid-cols-[0.875rem_1fr_auto] items-center gap-2 rounded-sm px-2.5 py-2 text-[12px] leading-4 outline-none select-none",
                   "data-highlighted:bg-secondary data-highlighted:text-ink",
                 )}
               >
@@ -69,10 +80,12 @@ export function ParamChip({
                   </Select.ItemIndicator>
                 </span>
                 <Select.ItemText>
-                  <span className="font-medium text-ink">{option.label}</span>
+                  <span className="font-medium tracking-[-0.01em] text-charcoal">
+                    {option.label}
+                  </span>
                 </Select.ItemText>
                 {option.meta ? (
-                  <span className="text-[11px] tracking-tight text-steel">
+                  <span className="text-[11px] leading-4 tracking-tight text-stone">
                     {option.meta}
                   </span>
                 ) : null}

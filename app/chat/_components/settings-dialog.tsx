@@ -295,8 +295,8 @@ export function SettingsDialog({
           </nav>
         </aside>
 
-        <div className="flex min-h-0 flex-col">
-          <ScrollArea className="flex-1">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          <ScrollArea className="min-h-0 flex-1">
             <div className="p-5">
               {section === "provider" ? (
                 <ProviderSection
