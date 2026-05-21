@@ -174,7 +174,7 @@ export function WorkspaceSidebar() {
               variant="ghost"
               size="sm"
               aria-label="Open provider settings"
-              className="w-full justify-start text-[12px] text-charcoal"
+              className="w-full justify-center text-[12px] text-charcoal"
             >
               <Settings className="size-4" />
             </Button>

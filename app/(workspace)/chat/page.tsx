@@ -52,7 +52,7 @@ export default function ChatPage() {
 
   const [draft, setDraft] = React.useState("");
   const [model, setModel] = React.useState(defaultImageModel);
-  const [size, setSize] = React.useState("1024x1024");
+  const [size, setSize] = React.useState("auto");
   const [quality, setQuality] = React.useState("auto");
   const [pendingTurn, setPendingTurn] = React.useState<PendingTurn | null>(
     null,
