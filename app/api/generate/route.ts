@@ -78,6 +78,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const startedAt = Date.now();
     const client = new OpenAI({
       apiKey,
       baseURL: baseURL || undefined,
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
       image: dataUri,
       model,
       revisedPrompt: image?.revised_prompt,
+      durationMs: Date.now() - startedAt,
     });
   } catch (error) {
     console.error(error);

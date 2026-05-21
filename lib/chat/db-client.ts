@@ -12,6 +12,7 @@ const SCHEMA_SQL = `
     quality        TEXT,
     revised_prompt TEXT,
     error          TEXT,
+    duration_ms    INTEGER,
     created_at     INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
@@ -34,8 +35,6 @@ const SCHEMA_SQL = `
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
-
-  PRAGMA user_version = 2;
 `;
 
 const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs";
@@ -156,6 +155,12 @@ function rowToMessage(row: Row): ChatMessage {
     revisedPrompt:
       row.revised_prompt == null ? null : String(row.revised_prompt),
     error: row.error == null ? null : String(row.error),
+    durationMs:
+      row.duration_ms == null
+        ? null
+        : typeof row.duration_ms === "number"
+          ? row.duration_ms
+          : Number(row.duration_ms) || null,
     createdAt:
       typeof row.created_at === "number"
         ? row.created_at
@@ -243,6 +248,35 @@ async function openDb(
   return { dbId, vfs: result?.vfs, persistent: result?.persistent };
 }
 
+const TARGET_USER_VERSION = 3;
+
+async function migrate(promiser: Promiser, dbId: string): Promise<void> {
+  const rows = await selectRows(promiser, dbId, "PRAGMA user_version");
+  const current = toNumber(rows[0]?.user_version ?? 0);
+
+  if (current < 3) {
+    const cols = await selectRows(
+      promiser,
+      dbId,
+      "PRAGMA table_info(messages)",
+    );
+    const hasDuration = cols.some((row) => String(row.name) === "duration_ms");
+    if (!hasDuration) {
+      await promiser.send("exec", {
+        dbId,
+        sql: "ALTER TABLE messages ADD COLUMN duration_ms INTEGER",
+      });
+    }
+  }
+
+  if (current !== TARGET_USER_VERSION) {
+    await promiser.send("exec", {
+      dbId,
+      sql: `PRAGMA user_version = ${TARGET_USER_VERSION}`,
+    });
+  }
+}
+
 export async function openChatDb(): Promise<ChatDb> {
   if (typeof window === "undefined") {
     throw new Error("openChatDb must be called in the browser");
@@ -277,6 +311,7 @@ export async function openChatDb(): Promise<ChatDb> {
   }
 
   await promiser.send("exec", { dbId, sql: SCHEMA_SQL });
+  await migrate(promiser, dbId);
 
   return {
     persistent,
@@ -289,8 +324,8 @@ export async function openChatDb(): Promise<ChatDb> {
         sql: `
           INSERT INTO messages (
             id, turn_id, role, content, image_data,
-            model, size, quality, revised_prompt, error, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            model, size, quality, revised_prompt, error, duration_ms, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         bind: [
           id,
@@ -303,6 +338,7 @@ export async function openChatDb(): Promise<ChatDb> {
           msg.quality,
           msg.revisedPrompt,
           msg.error,
+          msg.durationMs,
           createdAt,
         ],
       });
@@ -315,7 +351,8 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         `
           SELECT id, turn_id, role, content, image_data,
-                 model, size, quality, revised_prompt, error, created_at
+                 model, size, quality, revised_prompt, error,
+                 duration_ms, created_at
           FROM messages
           ORDER BY created_at ASC, id ASC
         `,

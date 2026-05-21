@@ -15,7 +15,14 @@ import {
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  estimateBase64Bytes,
+  formatBytes,
+  formatDuration,
+  formatTimestamp,
+  imageExtension,
+} from "@/lib/utils";
 import type { ChatMessage } from "@/lib/chat/types";
 
 import { AssistantAvatar, UserAvatar } from "./message-avatar";
@@ -47,10 +54,15 @@ function formatMetaLine(message: ChatMessage): string {
   return parts.join(" · ");
 }
 
-function imageExtension(imageData: string): string {
-  const match = /^data:image\/([a-zA-Z0-9.+-]+);/.exec(imageData);
-  if (!match) return "png";
-  return match[1] === "jpeg" ? "jpg" : match[1];
+function formatStatsLine(message: ChatMessage): string {
+  const parts: string[] = [formatTimestamp(message.createdAt)];
+  if (message.imageData) {
+    parts.push(formatBytes(estimateBase64Bytes(message.imageData)));
+  }
+  if (typeof message.durationMs === "number" && message.durationMs > 0) {
+    parts.push(`Elapsed ${formatDuration(message.durationMs)}`);
+  }
+  return parts.join(" · ");
 }
 
 function MessageActionButton({
@@ -179,6 +191,7 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
   }
 
   const metaLine = formatMetaLine(message);
+  const statsLine = formatStatsLine(message);
   const imageAlt = message.revisedPrompt ?? "Generated image";
 
   const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -258,6 +271,11 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
         {metaLine ? (
           <p className="mt-2 text-[11px] tracking-tight text-stone">
             {metaLine}
+          </p>
+        ) : null}
+        {statsLine ? (
+          <p className="mt-1 text-[11px] tabular-nums tracking-tight text-stone">
+            {statsLine}
           </p>
         ) : null}
       </div>

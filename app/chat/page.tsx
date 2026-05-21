@@ -22,6 +22,7 @@ type GenerateResponse = {
   image?: string;
   model?: string;
   revisedPrompt?: string;
+  durationMs?: number;
   error?: string;
 };
 
@@ -139,6 +140,7 @@ export default function ChatPage() {
       quality,
       revisedPrompt: null,
       error: null,
+      durationMs: null,
     };
 
     try {
@@ -157,6 +159,7 @@ export default function ChatPage() {
     });
 
     let assistant: NewChatMessage;
+    const requestStartedAt = Date.now();
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -186,6 +189,10 @@ export default function ChatPage() {
         quality,
         revisedPrompt: data.revisedPrompt || null,
         error: null,
+        durationMs:
+          typeof data.durationMs === "number"
+            ? data.durationMs
+            : Date.now() - requestStartedAt,
       };
     } catch (err) {
       const message =
@@ -201,6 +208,7 @@ export default function ChatPage() {
         quality,
         revisedPrompt: null,
         error: message,
+        durationMs: null,
       };
     } finally {
       setPendingTurn(null);

@@ -34,6 +34,7 @@ export type ChatMessage = {
   quality: string | null;
   revisedPrompt: string | null;
   error: string | null;
+  durationMs: number | null;
   createdAt: number;
 };
 
