@@ -61,6 +61,15 @@ const SCHEMA_SQL = `
 const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs";
 const ACTIVE_PROVIDER_KEY = "active_provider_id";
 
+export type StorageInfo = {
+  location: string;
+  persistent: boolean;
+  bytes: number;
+  messageCount: number;
+  providerCount: number;
+  tagCount: number;
+};
+
 export interface ChatDb {
   insert: (msg: NewChatMessage) => Promise<ChatMessage>;
   loadAll: () => Promise<ChatMessage[]>;
@@ -75,6 +84,7 @@ export interface ChatDb {
   loadAllTags: () => Promise<Tag[]>;
   addTagToMessage: (messageId: string, tagName: string) => Promise<Tag>;
   removeTagFromMessage: (messageId: string, tagId: string) => Promise<void>;
+  getStorageInfo: () => Promise<StorageInfo>;
   close: () => Promise<void>;
   readonly persistent: boolean;
 }
@@ -624,6 +634,40 @@ export async function openChatDb(): Promise<ChatDb> {
         `,
         bind: [tagId, tagId],
       });
+    },
+
+    async getStorageInfo() {
+      const sizeRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT (SELECT page_count FROM pragma_page_count()) * (SELECT page_size FROM pragma_page_size()) AS bytes",
+      );
+      const messageRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT COUNT(*) AS n FROM messages",
+      );
+      const providerRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT COUNT(*) AS n FROM providers",
+      );
+      const tagRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT COUNT(*) AS n FROM tags",
+      );
+
+      return {
+        location: persistent
+          ? "OPFS://imgen.sqlite"
+          : "In-memory (this tab only)",
+        persistent,
+        bytes: toNumber(sizeRows[0]?.bytes ?? 0),
+        messageCount: toNumber(messageRows[0]?.n ?? 0),
+        providerCount: toNumber(providerRows[0]?.n ?? 0),
+        tagCount: toNumber(tagRows[0]?.n ?? 0),
+      };
     },
 
     async close() {

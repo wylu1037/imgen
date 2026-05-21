@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { openChatDb, type ChatDb } from "@/lib/chat/db-client";
+import { openChatDb, type ChatDb, type StorageInfo } from "@/lib/chat/db-client";
 import type {
   ChatMessage,
   DbStatus,
@@ -19,6 +19,7 @@ type UseChatHistory = {
   clearAll: () => Promise<void>;
   addTag: (messageId: string, tagName: string) => Promise<Tag | null>;
   removeTag: (messageId: string, tagId: string) => Promise<void>;
+  getStorageInfo: () => Promise<StorageInfo | null>;
 };
 
 export function useChatHistory(): UseChatHistory {
@@ -116,6 +117,12 @@ export function useChatHistory(): UseChatHistory {
     [],
   );
 
+  const getStorageInfo = React.useCallback(async () => {
+    const db = dbRef.current;
+    if (!db) return null;
+    return db.getStorageInfo();
+  }, []);
+
   return {
     status,
     persistent,
@@ -125,5 +132,6 @@ export function useChatHistory(): UseChatHistory {
     clearAll,
     addTag,
     removeTag,
+    getStorageInfo,
   };
 }

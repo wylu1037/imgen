@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import {
+  AlertTriangle,
   Check,
+  Database,
   Download,
   Eye,
   EyeOff,
@@ -44,6 +47,9 @@ import { defaultImageModel } from "@/lib/chat/constants";
 import type { ProviderConfig } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
 
+import { useWorkspaceData } from "../_context/workspace-data-context";
+import type { StorageInfo } from "@/lib/chat/db-client";
+
 type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,7 +75,7 @@ type ModelsResponse = {
   error?: string;
 };
 
-type Section = "profile" | "provider" | "appearance";
+type Section = "profile" | "provider" | "appearance" | "storage";
 
 const SECTIONS: Array<{
   id: Section;
@@ -79,6 +85,7 @@ const SECTIONS: Array<{
   { id: "profile", label: "Profile", icon: UserRound },
   { id: "provider", label: "Provider", icon: Plug },
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "storage", label: "Storage", icon: Database },
 ];
 
 function normalizeModels(models: string[]): string[] {
@@ -325,6 +332,8 @@ export function SettingsDialog({
                 />
               ) : section === "appearance" ? (
                 <AppearanceSection />
+              ) : section === "storage" ? (
+                <StorageSection />
               ) : (
                 <ProfileSection />
               )}
@@ -767,5 +776,285 @@ function ProfileSection() {
         })}
       </div>
     </>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const exp = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const value = bytes / Math.pow(1024, exp);
+  return `${value < 10 ? value.toFixed(2) : value.toFixed(1)} ${units[exp]}`;
+}
+
+function StorageSection() {
+  const { chatHistory, providerSettings } = useWorkspaceData();
+  const { status: dbStatus, getStorageInfo, clearAll: clearChat } = chatHistory;
+  const { clearAll: clearProviders } = providerSettings;
+
+  const [info, setInfo] = React.useState<StorageInfo | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [confirmChat, setConfirmChat] = React.useState(false);
+  const [confirmReset, setConfirmReset] = React.useState(false);
+  const [working, setWorking] = React.useState<"chat" | "reset" | null>(null);
+  const confirmChatTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const confirmResetTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  const refresh = React.useCallback(async () => {
+    if (dbStatus !== "ready") return;
+    setLoading(true);
+    try {
+      const next = await getStorageInfo();
+      setInfo(next);
+    } catch (err) {
+      console.error("[storage] failed to load info", err);
+      toast.error("Failed to read storage info.");
+    } finally {
+      setLoading(false);
+    }
+  }, [dbStatus, getStorageInfo]);
+
+  React.useEffect(() => {
+    if (dbStatus !== "ready") return;
+    let cancelled = false;
+    getStorageInfo()
+      .then((next) => {
+        if (!cancelled) setInfo(next);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[storage] failed to load info", err);
+        toast.error("Failed to read storage info.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dbStatus, getStorageInfo]);
+
+  React.useEffect(() => {
+    return () => {
+      if (confirmChatTimer.current) clearTimeout(confirmChatTimer.current);
+      if (confirmResetTimer.current) clearTimeout(confirmResetTimer.current);
+    };
+  }, []);
+
+  const armConfirm = (which: "chat" | "reset") => {
+    if (which === "chat") {
+      setConfirmChat(true);
+      if (confirmChatTimer.current) clearTimeout(confirmChatTimer.current);
+      confirmChatTimer.current = setTimeout(() => setConfirmChat(false), 3000);
+    } else {
+      setConfirmReset(true);
+      if (confirmResetTimer.current) clearTimeout(confirmResetTimer.current);
+      confirmResetTimer.current = setTimeout(() => setConfirmReset(false), 3000);
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!confirmChat) {
+      armConfirm("chat");
+      return;
+    }
+    setConfirmChat(false);
+    setWorking("chat");
+    try {
+      await clearChat();
+      toast.success("Chat history cleared.");
+      await refresh();
+    } catch (err) {
+      console.error("[storage] clear chat failed", err);
+      toast.error("Failed to clear chat history.");
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirmReset) {
+      armConfirm("reset");
+      return;
+    }
+    setConfirmReset(false);
+    setWorking("reset");
+    try {
+      await clearChat();
+      clearProviders();
+      toast.success("Everything reset.");
+      await refresh();
+    } catch (err) {
+      console.error("[storage] reset failed", err);
+      toast.error("Failed to reset.");
+    } finally {
+      setWorking(null);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-4">
+        <h3 className="text-[12px] font-semibold text-ink">Storage</h3>
+        <p className="mt-0.5 text-[11px] leading-4 text-steel">
+          Local SQLite database backing your chat history and provider settings.
+        </p>
+      </div>
+
+      <div className="mb-5 grid gap-2 rounded-lg border border-hairline-soft bg-card p-3">
+        <StorageRow label="Location" value={info?.location ?? "—"} mono />
+        <StorageRow
+          label="Persistence"
+          value={
+            info
+              ? info.persistent
+                ? "Persistent (OPFS)"
+                : "Volatile (tab-local)"
+              : "—"
+          }
+        />
+        <StorageRow
+          label="Size"
+          value={info ? formatBytes(info.bytes) : "—"}
+        />
+        <StorageRow
+          label="Messages"
+          value={info ? info.messageCount.toLocaleString() : "—"}
+        />
+        <StorageRow
+          label="Providers"
+          value={info ? info.providerCount.toLocaleString() : "—"}
+        />
+        <StorageRow
+          label="Tags"
+          value={info ? info.tagCount.toLocaleString() : "—"}
+        />
+        <div className="mt-1 flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => void refresh()}
+            disabled={loading || dbStatus !== "ready"}
+            className="h-7 px-2 text-[11px] text-steel [&_svg]:size-3.5"
+          >
+            {loading ? (
+              <Loader2 data-icon="inline-start" className="animate-spin" />
+            ) : (
+              <RefreshCw data-icon="inline-start" />
+            )}
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-destructive/30 bg-destructive/[0.03] p-3">
+        <div className="mb-2 flex items-center gap-1.5">
+          <AlertTriangle className="size-3.5 text-destructive" />
+          <h4 className="text-[12px] font-semibold text-destructive">
+            Danger zone
+          </h4>
+        </div>
+        <p className="mb-3 text-[11px] leading-4 text-steel">
+          These actions cannot be undone. Data lives only in this browser.
+        </p>
+
+        <div className="grid gap-2">
+          <DangerRow
+            title="Clear chat history"
+            description="Delete all generated images, prompts, and tags. Keeps provider settings."
+            buttonLabel={
+              confirmChat ? "Click again to confirm" : "Clear chat history"
+            }
+            armed={confirmChat}
+            working={working === "chat"}
+            disabled={working !== null || dbStatus !== "ready"}
+            onClick={() => void handleClearChat()}
+          />
+          <DangerRow
+            title="Reset everything"
+            description="Wipe chat history AND remove all providers/API keys. Settings revert to defaults."
+            buttonLabel={
+              confirmReset ? "Click again to confirm" : "Reset everything"
+            }
+            armed={confirmReset}
+            working={working === "reset"}
+            disabled={working !== null || dbStatus !== "ready"}
+            onClick={() => void handleReset()}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StorageRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-[12px]">
+      <span className="text-steel">{label}</span>
+      <span
+        className={cn(
+          "truncate text-right text-ink",
+          mono && "font-mono text-[11px]",
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function DangerRow({
+  title,
+  description,
+  buttonLabel,
+  armed,
+  working,
+  disabled,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  buttonLabel: string;
+  armed: boolean;
+  working: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-hairline-soft bg-card p-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-[12px] font-medium text-ink">{title}</p>
+        <p className="mt-0.5 text-[11px] leading-4 text-steel">{description}</p>
+      </div>
+      <Button
+        type="button"
+        variant={armed ? "destructive" : "outline"}
+        size="sm"
+        onClick={onClick}
+        disabled={disabled}
+        className="h-8 shrink-0 text-[11px]"
+      >
+        {working ? (
+          <Loader2 data-icon="inline-start" className="animate-spin" />
+        ) : null}
+        {buttonLabel}
+      </Button>
+    </div>
   );
 }
