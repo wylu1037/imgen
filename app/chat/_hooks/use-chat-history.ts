@@ -3,7 +3,12 @@
 import * as React from "react";
 
 import { openChatDb, type ChatDb } from "@/lib/chat/db-client";
-import type { ChatMessage, DbStatus, NewChatMessage } from "@/lib/chat/types";
+import type {
+  ChatMessage,
+  DbStatus,
+  NewChatMessage,
+  Tag,
+} from "@/lib/chat/types";
 
 type UseChatHistory = {
   status: DbStatus;
@@ -12,6 +17,8 @@ type UseChatHistory = {
   append: (msg: NewChatMessage) => Promise<ChatMessage>;
   deleteTurn: (turnId: string) => Promise<void>;
   clearAll: () => Promise<void>;
+  addTag: (messageId: string, tagName: string) => Promise<Tag | null>;
+  removeTag: (messageId: string, tagId: string) => Promise<void>;
 };
 
 export function useChatHistory(): UseChatHistory {
@@ -70,5 +77,53 @@ export function useChatHistory(): UseChatHistory {
     setMessages([]);
   }, []);
 
-  return { status, persistent, messages, append, deleteTurn, clearAll };
+  const addTag = React.useCallback(
+    async (messageId: string, tagName: string) => {
+      const db = dbRef.current;
+      if (!db) return null;
+      const trimmed = tagName.trim();
+      if (!trimmed) return null;
+
+      const tag = await db.addTagToMessage(messageId, trimmed);
+      setMessages((current) =>
+        current.map((m) => {
+          if (m.id !== messageId) return m;
+          if (m.tags.some((t) => t.id === tag.id)) return m;
+          const nextTags = [...m.tags, tag].sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+          );
+          return { ...m, tags: nextTags };
+        }),
+      );
+      return tag;
+    },
+    [],
+  );
+
+  const removeTag = React.useCallback(
+    async (messageId: string, tagId: string) => {
+      const db = dbRef.current;
+      if (!db) return;
+      await db.removeTagFromMessage(messageId, tagId);
+      setMessages((current) =>
+        current.map((m) =>
+          m.id === messageId
+            ? { ...m, tags: m.tags.filter((t) => t.id !== tagId) }
+            : m,
+        ),
+      );
+    },
+    [],
+  );
+
+  return {
+    status,
+    persistent,
+    messages,
+    append,
+    deleteTurn,
+    clearAll,
+    addTag,
+    removeTag,
+  };
 }

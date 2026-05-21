@@ -53,6 +53,8 @@ export default function ChatPage() {
     messages,
     append,
     deleteTurn,
+    addTag,
+    removeTag,
   } = useChatHistory();
 
   const [draft, setDraft] = React.useState("");
@@ -287,6 +289,30 @@ export default function ChatPage() {
     }
   }, [clearSelection, deleteTurn, selectedTurnIds]);
 
+  const handleAddTag = React.useCallback(
+    async (messageId: string, tagName: string) => {
+      try {
+        await addTag(messageId, tagName);
+      } catch (err) {
+        console.error("[chat] failed to add tag", err);
+        toast.error("Failed to add tag.");
+      }
+    },
+    [addTag],
+  );
+
+  const handleRemoveTag = React.useCallback(
+    async (messageId: string, tagId: string) => {
+      try {
+        await removeTag(messageId, tagId);
+      } catch (err) {
+        console.error("[chat] failed to remove tag", err);
+        toast.error("Failed to remove tag.");
+      }
+    },
+    [removeTag],
+  );
+
   return (
     <SidebarProvider className="h-dvh min-h-0">
       <ChatSidebar
@@ -314,6 +340,8 @@ export default function ChatPage() {
             onDeleteTurn={(turnId) => {
               void handleDeleteTurn(turnId);
             }}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
             selectedTurnIds={selectedTurnIds}
             onToggleTurnSelection={toggleTurnSelection}
             onClearSelection={clearSelection}

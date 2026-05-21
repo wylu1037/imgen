@@ -23,6 +23,8 @@ type MessageListProps = {
   onPickSample: (prompt: string) => void;
   onEditPrompt: (prompt: string) => void;
   onDeleteTurn: (turnId: string) => void;
+  onAddTag: (messageId: string, tagName: string) => Promise<void> | void;
+  onRemoveTag: (messageId: string, tagId: string) => Promise<void> | void;
   selectedTurnIds: Set<string>;
   onToggleTurnSelection: (turnId: string) => void;
   onClearSelection: () => void;
@@ -38,6 +40,8 @@ export function MessageList({
   onPickSample,
   onEditPrompt,
   onDeleteTurn,
+  onAddTag,
+  onRemoveTag,
   selectedTurnIds,
   onToggleTurnSelection,
   onClearSelection,
@@ -103,7 +107,12 @@ export function MessageList({
               onToggleSelection={onToggleTurnSelection}
             />
           ) : (
-            <AssistantBubble key={message.id} message={message} />
+            <AssistantBubble
+              key={message.id}
+              message={message}
+              onAddTag={onAddTag}
+              onRemoveTag={onRemoveTag}
+            />
           ),
         )}
         {pendingTurn ? <PendingBubble turn={pendingTurn} /> : null}

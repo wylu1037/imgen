@@ -23,6 +23,11 @@ export type LegacyProviderSettings = {
   defaultModel: string;
 };
 
+export type Tag = {
+  id: string;
+  name: string;
+};
+
 export type ChatMessage = {
   id: string;
   turnId: string;
@@ -36,8 +41,9 @@ export type ChatMessage = {
   error: string | null;
   durationMs: number | null;
   createdAt: number;
+  tags: Tag[];
 };
 
-export type NewChatMessage = Omit<ChatMessage, "id" | "createdAt">;
+export type NewChatMessage = Omit<ChatMessage, "id" | "createdAt" | "tags">;
 
 export type DbStatus = "idle" | "loading" | "ready" | "unsupported" | "error";

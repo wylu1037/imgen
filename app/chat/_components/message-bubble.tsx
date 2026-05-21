@@ -26,6 +26,7 @@ import {
 import type { ChatMessage } from "@/lib/chat/types";
 
 import { AssistantAvatar, UserAvatar } from "./message-avatar";
+import { MessageTags } from "./message-tags";
 
 type PendingTurn = {
   turnId: string;
@@ -170,7 +171,15 @@ export function UserBubble({
   );
 }
 
-export function AssistantBubble({ message }: { message: ChatMessage }) {
+export function AssistantBubble({
+  message,
+  onAddTag,
+  onRemoveTag,
+}: {
+  message: ChatMessage;
+  onAddTag: (messageId: string, tagName: string) => Promise<void> | void;
+  onRemoveTag: (messageId: string, tagId: string) => Promise<void> | void;
+}) {
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 
   if (message.error) {
@@ -207,77 +216,86 @@ export function AssistantBubble({ message }: { message: ChatMessage }) {
   return (
     <div className="flex justify-start gap-2">
       <AssistantAvatar className="self-start" />
-      <div className="max-w-[75%] rounded-lg border border-border bg-card p-3">
-        {message.imageData ? (
-          <Dialog.Root open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-            <div className="group relative overflow-hidden rounded-md bg-surface-soft">
-              <button
-                type="button"
-                onClick={() => setIsPreviewOpen(true)}
-                className="block w-full cursor-zoom-in focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
-                aria-label="Open generated image preview"
-              >
-                <Image
-                  src={message.imageData}
-                  alt={imageAlt}
-                  width={1024}
-                  height={1024}
-                  unoptimized
-                  className="h-auto w-full"
-                />
-              </button>
-              <div className="absolute top-2 right-2 flex gap-1">
-                <MessageActionButton
-                  label="Download image"
-                  onClick={handleDownload}
+      <div className="flex max-w-[75%] flex-col gap-2">
+        <div className="rounded-lg border border-border bg-card p-3">
+          {message.imageData ? (
+            <Dialog.Root open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+              <div className="group relative overflow-hidden rounded-md bg-surface-soft">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="block w-full cursor-zoom-in focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
+                  aria-label="Open generated image preview"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                </MessageActionButton>
-                <MessageActionButton
-                  label="Open generated image preview"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setIsPreviewOpen(true);
-                  }}
-                >
-                  <Expand className="h-3.5 w-3.5" />
-                </MessageActionButton>
+                  <Image
+                    src={message.imageData}
+                    alt={imageAlt}
+                    width={1024}
+                    height={1024}
+                    unoptimized
+                    className="h-auto w-full"
+                  />
+                </button>
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <MessageActionButton
+                    label="Download image"
+                    onClick={handleDownload}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </MessageActionButton>
+                  <MessageActionButton
+                    label="Open generated image preview"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setIsPreviewOpen(true);
+                    }}
+                  >
+                    <Expand className="h-3.5 w-3.5" />
+                  </MessageActionButton>
+                </div>
               </div>
-            </div>
-            <Dialog.Portal>
-              <Dialog.Backdrop className="fixed inset-0 z-40 bg-ink/70 backdrop-blur-sm transition-opacity duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
-              <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[min(92vw,1100px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-card p-2 shadow-modal transition-[opacity,transform] duration-200 ease-out outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
-                <Dialog.Title className="sr-only">
-                  Generated image preview
-                </Dialog.Title>
-                <Image
-                  src={message.imageData}
-                  alt={imageAlt}
-                  width={1536}
-                  height={1536}
-                  unoptimized
-                  className="max-h-[86vh] w-full rounded-lg object-contain"
-                />
-              </Dialog.Popup>
-            </Dialog.Portal>
-          </Dialog.Root>
-        ) : null}
-        {message.revisedPrompt ? (
-          <p className="mt-2.5 text-[12px] leading-relaxed text-steel">
-            <span className="font-medium text-charcoal">Revised prompt: </span>
-            {message.revisedPrompt}
-          </p>
-        ) : null}
-        {metaLine ? (
-          <p className="mt-2 text-[11px] tracking-tight text-stone">
-            {metaLine}
-          </p>
-        ) : null}
-        {statsLine ? (
-          <p className="mt-1 text-[11px] tabular-nums tracking-tight text-stone">
-            {statsLine}
-          </p>
-        ) : null}
+              <Dialog.Portal>
+                <Dialog.Backdrop className="fixed inset-0 z-40 bg-ink/70 backdrop-blur-sm transition-opacity duration-200 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0" />
+                <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[min(92vw,1100px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-card p-2 shadow-modal transition-[opacity,transform] duration-200 ease-out outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+                  <Dialog.Title className="sr-only">
+                    Generated image preview
+                  </Dialog.Title>
+                  <Image
+                    src={message.imageData}
+                    alt={imageAlt}
+                    width={1536}
+                    height={1536}
+                    unoptimized
+                    className="max-h-[86vh] w-full rounded-lg object-contain"
+                  />
+                </Dialog.Popup>
+              </Dialog.Portal>
+            </Dialog.Root>
+          ) : null}
+          {message.revisedPrompt ? (
+            <p className="mt-2.5 text-[12px] leading-relaxed text-steel">
+              <span className="font-medium text-charcoal">
+                Revised prompt:{" "}
+              </span>
+              {message.revisedPrompt}
+            </p>
+          ) : null}
+          {metaLine ? (
+            <p className="mt-2 text-[11px] tracking-tight text-stone">
+              {metaLine}
+            </p>
+          ) : null}
+          {statsLine ? (
+            <p className="mt-1 text-[11px] tracking-tight text-stone tabular-nums">
+              {statsLine}
+            </p>
+          ) : null}
+        </div>
+        <MessageTags
+          tags={message.tags}
+          onAddTag={(name) => onAddTag(message.id, name)}
+          onRemoveTag={(tagId) => onRemoveTag(message.id, tagId)}
+        />
       </div>
     </div>
   );

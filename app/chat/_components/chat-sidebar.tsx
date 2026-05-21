@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ImageIcon, Settings } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ImageIcon, Images, MessagesSquare, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,22 +28,22 @@ import { SettingsDialog } from "./settings-dialog";
 
 type ChatSidebarProps = {
   messages: ChatMessage[];
-  selectedTurnId: string | null;
-  onSelectTurn: (turnId: string) => void;
-  providers: ProviderConfig[];
-  activeProviderId: string | null;
-  onSelectProvider: (providerId: string) => void;
-  onCreateProvider: () => ProviderConfig;
-  onSaveProvider: (provider: ProviderConfig) => void;
-  onDeleteProvider: (providerId: string) => void;
+  selectedTurnId?: string | null;
+  onSelectTurn?: (turnId: string) => void;
+  providers?: ProviderConfig[];
+  activeProviderId?: string | null;
+  onSelectProvider?: (providerId: string) => void;
+  onCreateProvider?: () => ProviderConfig;
+  onSaveProvider?: (provider: ProviderConfig) => void;
+  onDeleteProvider?: (providerId: string) => void;
 };
 
 export function ChatSidebar({
   messages,
-  selectedTurnId,
+  selectedTurnId = null,
   onSelectTurn,
   providers,
-  activeProviderId,
+  activeProviderId = null,
   onSelectProvider,
   onCreateProvider,
   onSaveProvider,
@@ -55,11 +56,32 @@ export function ChatSidebar({
   const hasHistory = groups.length > 0;
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
+  const pathname = usePathname();
 
   const handleSelectTurn = (turnId: string) => {
-    onSelectTurn(turnId);
+    onSelectTurn?.(turnId);
     if (isMobile) setOpenMobile(false);
   };
+
+  const handleNavigate = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
+  const navItems = [
+    {
+      href: "/chat",
+      label: "Chat",
+      icon: MessagesSquare,
+      match: (path: string) => path === "/chat" || path.startsWith("/chat/"),
+    },
+    {
+      href: "/gallery",
+      label: "Gallery",
+      icon: Images,
+      match: (path: string) =>
+        path === "/gallery" || path.startsWith("/gallery/"),
+    },
+  ];
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -78,6 +100,33 @@ export function ChatSidebar({
       </SidebarHeader>
 
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.match(pathname ?? "");
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      render={<Link href={item.href} />}
+                      onClick={handleNavigate}
+                      isActive={isActive}
+                      className={cn(
+                        "text-[13px] text-charcoal",
+                        "data-[active=true]:bg-tint-lavender data-[active=true]:text-brand-purple-800",
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         {hasHistory ? (
           groups.map((group) => (
             <SidebarGroup key={group.key}>
@@ -118,29 +167,35 @@ export function ChatSidebar({
         )}
       </SidebarContent>
 
-      <SidebarFooter className="gap-1 border-hairline-soft">
-        <SettingsDialog
-          open={isSettingsOpen}
-          onOpenChange={setIsSettingsOpen}
-          providers={providers}
-          activeProviderId={activeProviderId}
-          onSelectProvider={onSelectProvider}
-          onCreateProvider={onCreateProvider}
-          onSaveProvider={onSaveProvider}
-          onDeleteProvider={onDeleteProvider}
-          trigger={
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label="Open provider settings"
-              className="w-full justify-start text-[12px] text-charcoal"
-            >
-              <Settings className="size-4" />
-            </Button>
-          }
-        />
-      </SidebarFooter>
+      {providers &&
+      onSelectProvider &&
+      onCreateProvider &&
+      onSaveProvider &&
+      onDeleteProvider ? (
+        <SidebarFooter className="gap-1 border-hairline-soft">
+          <SettingsDialog
+            open={isSettingsOpen}
+            onOpenChange={setIsSettingsOpen}
+            providers={providers}
+            activeProviderId={activeProviderId}
+            onSelectProvider={onSelectProvider}
+            onCreateProvider={onCreateProvider}
+            onSaveProvider={onSaveProvider}
+            onDeleteProvider={onDeleteProvider}
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label="Open provider settings"
+                className="w-full justify-start text-[12px] text-charcoal"
+              >
+                <Settings className="size-4" />
+              </Button>
+            }
+          />
+        </SidebarFooter>
+      ) : null}
     </Sidebar>
   );
 }

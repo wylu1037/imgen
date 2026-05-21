@@ -1,4 +1,9 @@
-import type { ChatMessage, NewChatMessage, ProviderConfig } from "./types";
+import type {
+  ChatMessage,
+  NewChatMessage,
+  ProviderConfig,
+  Tag,
+} from "./types";
 
 const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS messages (
@@ -35,6 +40,22 @@ const SCHEMA_SQL = `
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS tags (
+    id         TEXT PRIMARY KEY,
+    name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name COLLATE NOCASE);
+
+  CREATE TABLE IF NOT EXISTS message_tags (
+    message_id TEXT NOT NULL,
+    tag_id     TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (message_id, tag_id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_message_tags_message ON message_tags(message_id);
+  CREATE INDEX IF NOT EXISTS idx_message_tags_tag ON message_tags(tag_id);
 `;
 
 const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs";
@@ -51,6 +72,9 @@ export interface ChatDb {
   clearProviders: () => Promise<void>;
   loadActiveProviderId: () => Promise<string | null>;
   setActiveProviderId: (providerId: string | null) => Promise<void>;
+  loadAllTags: () => Promise<Tag[]>;
+  addTagToMessage: (messageId: string, tagName: string) => Promise<Tag>;
+  removeTagFromMessage: (messageId: string, tagId: string) => Promise<void>;
   close: () => Promise<void>;
   readonly persistent: boolean;
 }
@@ -165,6 +189,14 @@ function rowToMessage(row: Row): ChatMessage {
       typeof row.created_at === "number"
         ? row.created_at
         : Number(row.created_at) || 0,
+    tags: [],
+  };
+}
+
+function rowToTag(row: Row): Tag {
+  return {
+    id: String(row.id),
+    name: String(row.name),
   };
 }
 
@@ -248,7 +280,7 @@ async function openDb(
   return { dbId, vfs: result?.vfs, persistent: result?.persistent };
 }
 
-const TARGET_USER_VERSION = 3;
+const TARGET_USER_VERSION = 4;
 
 async function migrate(promiser: Promiser, dbId: string): Promise<void> {
   const rows = await selectRows(promiser, dbId, "PRAGMA user_version");
@@ -268,6 +300,10 @@ async function migrate(promiser: Promiser, dbId: string): Promise<void> {
       });
     }
   }
+
+  // v4: tags + message_tags tables are created by SCHEMA_SQL via
+  // CREATE TABLE IF NOT EXISTS, so existing databases automatically pick them
+  // up. Only the user_version bump is needed.
 
   if (current !== TARGET_USER_VERSION) {
     await promiser.send("exec", {
@@ -342,7 +378,7 @@ export async function openChatDb(): Promise<ChatDb> {
           createdAt,
         ],
       });
-      return { id, createdAt, ...msg };
+      return { id, createdAt, tags: [], ...msg };
     },
 
     async loadAll() {
@@ -357,19 +393,71 @@ export async function openChatDb(): Promise<ChatDb> {
           ORDER BY created_at ASC, id ASC
         `,
       );
-      return resultRows.map(rowToMessage);
+      const messages = resultRows.map(rowToMessage);
+
+      const tagRows = await selectRows(
+        promiser,
+        dbId,
+        `
+          SELECT mt.message_id AS message_id, t.id AS id, t.name AS name
+          FROM message_tags mt
+          JOIN tags t ON t.id = mt.tag_id
+          ORDER BY t.name COLLATE NOCASE ASC
+        `,
+      );
+
+      const tagsByMessage = new Map<string, Tag[]>();
+      for (const row of tagRows) {
+        const messageId = String(row.message_id);
+        const list = tagsByMessage.get(messageId);
+        const tag = rowToTag(row);
+        if (list) {
+          list.push(tag);
+        } else {
+          tagsByMessage.set(messageId, [tag]);
+        }
+      }
+
+      for (const message of messages) {
+        const list = tagsByMessage.get(message.id);
+        if (list) message.tags = list;
+      }
+
+      return messages;
     },
 
     async deleteTurn(turnId) {
       await promiser.send("exec", {
         dbId,
+        sql: `
+          DELETE FROM message_tags
+          WHERE message_id IN (SELECT id FROM messages WHERE turn_id = ?)
+        `,
+        bind: [turnId],
+      });
+      await promiser.send("exec", {
+        dbId,
         sql: "DELETE FROM messages WHERE turn_id = ?",
         bind: [turnId],
+      });
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM tags
+          WHERE id NOT IN (SELECT DISTINCT tag_id FROM message_tags)
+        `,
       });
     },
 
     async clearAll() {
-      await promiser.send("exec", { dbId, sql: "DELETE FROM messages" });
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM message_tags;
+          DELETE FROM tags;
+          DELETE FROM messages;
+        `,
+      });
     },
 
     async loadProviders() {
@@ -464,6 +552,77 @@ export async function openChatDb(): Promise<ChatDb> {
           ON CONFLICT(key) DO UPDATE SET value = excluded.value
         `,
         bind: [ACTIVE_PROVIDER_KEY, providerId],
+      });
+    },
+
+    async loadAllTags() {
+      const resultRows = await selectRows(
+        promiser,
+        dbId,
+        `
+          SELECT id, name
+          FROM tags
+          ORDER BY name COLLATE NOCASE ASC
+        `,
+      );
+      return resultRows.map(rowToTag);
+    },
+
+    async addTagToMessage(messageId, tagName) {
+      const normalized = tagName.trim();
+      if (!normalized) {
+        throw new Error("Tag name cannot be empty");
+      }
+
+      const existing = await selectRows(
+        promiser,
+        dbId,
+        "SELECT id, name FROM tags WHERE name = ? COLLATE NOCASE LIMIT 1",
+        [normalized],
+      );
+
+      let tag: Tag;
+      if (existing.length > 0) {
+        tag = rowToTag(existing[0]);
+      } else {
+        const id = generateId();
+        await promiser.send("exec", {
+          dbId,
+          sql: "INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)",
+          bind: [id, normalized, Date.now()],
+        });
+        tag = { id, name: normalized };
+      }
+
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          INSERT INTO message_tags (message_id, tag_id, created_at)
+          VALUES (?, ?, ?)
+          ON CONFLICT(message_id, tag_id) DO NOTHING
+        `,
+        bind: [messageId, tag.id, Date.now()],
+      });
+
+      return tag;
+    },
+
+    async removeTagFromMessage(messageId, tagId) {
+      await promiser.send("exec", {
+        dbId,
+        sql: "DELETE FROM message_tags WHERE message_id = ? AND tag_id = ?",
+        bind: [messageId, tagId],
+      });
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM tags
+          WHERE id = ?
+            AND NOT EXISTS (
+              SELECT 1 FROM message_tags WHERE tag_id = ?
+            )
+        `,
+        bind: [tagId, tagId],
       });
     },
 
