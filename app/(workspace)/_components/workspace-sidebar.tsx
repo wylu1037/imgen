@@ -22,33 +22,24 @@ import {
 import { ImgenMark } from "@/app/_components/imgen-mark";
 import { cn } from "@/lib/utils";
 import { groupUserTurnsByTime, summarizeTurn } from "@/lib/chat/grouping";
-import type { ChatMessage, ProviderConfig } from "@/lib/chat/types";
+
+import { useWorkspaceData } from "../_context/workspace-data-context";
 
 import { SettingsDialog } from "./settings-dialog";
 
-type ChatSidebarProps = {
-  messages: ChatMessage[];
-  selectedTurnId?: string | null;
-  onSelectTurn?: (turnId: string) => void;
-  providers?: ProviderConfig[];
-  activeProviderId?: string | null;
-  onSelectProvider?: (providerId: string) => void;
-  onCreateProvider?: () => ProviderConfig;
-  onSaveProvider?: (provider: ProviderConfig) => void;
-  onDeleteProvider?: (providerId: string) => void;
-};
+export function WorkspaceSidebar() {
+  const { chatHistory, providerSettings, selectedTurnId, setSelectedTurnId } =
+    useWorkspaceData();
+  const { messages } = chatHistory;
+  const {
+    providers,
+    activeProviderId,
+    setActiveProviderId,
+    createProvider,
+    saveProvider,
+    deleteProvider,
+  } = providerSettings;
 
-export function ChatSidebar({
-  messages,
-  selectedTurnId = null,
-  onSelectTurn,
-  providers,
-  activeProviderId = null,
-  onSelectProvider,
-  onCreateProvider,
-  onSaveProvider,
-  onDeleteProvider,
-}: ChatSidebarProps) {
   const groups = React.useMemo(
     () => groupUserTurnsByTime(messages),
     [messages],
@@ -59,7 +50,7 @@ export function ChatSidebar({
   const pathname = usePathname();
 
   const handleSelectTurn = (turnId: string) => {
-    onSelectTurn?.(turnId);
+    setSelectedTurnId(turnId);
     if (isMobile) setOpenMobile(false);
   };
 
@@ -167,35 +158,29 @@ export function ChatSidebar({
         )}
       </SidebarContent>
 
-      {providers &&
-      onSelectProvider &&
-      onCreateProvider &&
-      onSaveProvider &&
-      onDeleteProvider ? (
-        <SidebarFooter className="gap-1 border-hairline-soft">
-          <SettingsDialog
-            open={isSettingsOpen}
-            onOpenChange={setIsSettingsOpen}
-            providers={providers}
-            activeProviderId={activeProviderId}
-            onSelectProvider={onSelectProvider}
-            onCreateProvider={onCreateProvider}
-            onSaveProvider={onSaveProvider}
-            onDeleteProvider={onDeleteProvider}
-            trigger={
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                aria-label="Open provider settings"
-                className="w-full justify-start text-[12px] text-charcoal"
-              >
-                <Settings className="size-4" />
-              </Button>
-            }
-          />
-        </SidebarFooter>
-      ) : null}
+      <SidebarFooter className="gap-1 border-hairline-soft">
+        <SettingsDialog
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+          providers={providers}
+          activeProviderId={activeProviderId}
+          onSelectProvider={setActiveProviderId}
+          onCreateProvider={createProvider}
+          onSaveProvider={saveProvider}
+          onDeleteProvider={deleteProvider}
+          trigger={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="Open provider settings"
+              className="w-full justify-start text-[12px] text-charcoal"
+            >
+              <Settings className="size-4" />
+            </Button>
+          }
+        />
+      </SidebarFooter>
     </Sidebar>
   );
 }

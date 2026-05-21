@@ -372,6 +372,13 @@ function ProviderSection({
   const [showApiKey, setShowApiKey] = React.useState(false);
   return (
     <>
+      <div className="mb-4">
+        <h3 className="text-[12px] font-semibold text-ink">Providers</h3>
+        <p className="mt-0.5 text-[11px] leading-4 text-steel">
+          Select your active provider, or add a new one.
+        </p>
+      </div>
+
       <div className="mb-4 grid gap-2 sm:grid-cols-2">
         {providers.map((provider) => {
           const isActive = provider.id === activeProviderId;

@@ -4,16 +4,10 @@ import * as React from "react";
 import { ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import type { ChatMessage } from "@/lib/chat/types";
 
-import { ChatSidebar } from "../chat/_components/chat-sidebar";
-import { useChatHistory } from "../chat/_hooks/use-chat-history";
+import { useWorkspaceData } from "../_context/workspace-data-context";
 
 import { ImageCard } from "./_components/image-card";
 import { TagFilter } from "./_components/tag-filter";
@@ -27,7 +21,8 @@ type GalleryItem = {
 };
 
 export default function GalleryPage() {
-  const { status, persistent, messages } = useChatHistory();
+  const { chatHistory } = useWorkspaceData();
+  const { status, persistent, messages } = chatHistory;
   const [selectedTag, setSelectedTag] = React.useState<string>(ALL_FILTER);
   const persistenceWarnedRef = React.useRef(false);
 
@@ -102,66 +97,58 @@ export default function GalleryPage() {
   const isLoading = status === "loading" || status === "idle";
 
   return (
-    <SidebarProvider className="h-dvh min-h-0">
-      <ChatSidebar messages={messages} />
-
-      <SidebarInset className="overflow-hidden">
-        <SidebarTrigger className="absolute top-3 left-3 z-10" />
-
-        <div className="flex flex-1 flex-col overflow-hidden pt-12">
-          <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
-            <div className="mx-auto w-full max-w-6xl">
-              <div className="flex flex-col gap-1">
-                <h1 className="text-[18px] font-semibold tracking-tight text-ink">
-                  Gallery
-                </h1>
-                <p className="text-[12px] text-steel">
-                  Browse and filter your generated images by tag.
-                </p>
-              </div>
-              {tagOptions.length > 1 ? (
-                <div className="mt-3">
-                  <TagFilter
-                    options={tagOptions}
-                    selected={selectedTag}
-                    onSelect={setSelectedTag}
-                  />
-                </div>
-              ) : null}
-            </div>
+    <div className="flex flex-1 flex-col overflow-hidden pt-12">
+      <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-[18px] font-semibold tracking-tight text-ink">
+              Gallery
+            </h1>
+            <p className="text-[12px] text-steel">
+              Browse and filter your generated images by tag.
+            </p>
           </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-6">
-            <div className="mx-auto w-full max-w-6xl">
-              {isLoading ? (
-                <div className="flex h-64 items-center justify-center gap-2 text-stone">
-                  <Spinner className="h-4 w-4" />
-                  <span className="text-[13px]">Loading gallery</span>
-                </div>
-              ) : filteredItems.length === 0 ? (
-                <EmptyState
-                  message={
-                    items.length === 0
-                      ? "No images yet. Generate some in Chat to see them here."
-                      : "No images match this filter."
-                  }
-                />
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredItems.map((item) => (
-                    <ImageCard
-                      key={item.assistant.id}
-                      message={item.assistant}
-                      prompt={item.prompt}
-                    />
-                  ))}
-                </div>
-              )}
+          {tagOptions.length > 1 ? (
+            <div className="mt-3">
+              <TagFilter
+                options={tagOptions}
+                selected={selectedTag}
+                onSelect={setSelectedTag}
+              />
             </div>
-          </div>
+          ) : null}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="mx-auto w-full max-w-6xl">
+          {isLoading ? (
+            <div className="flex h-64 items-center justify-center gap-2 text-stone">
+              <Spinner className="h-4 w-4" />
+              <span className="text-[13px]">Loading gallery</span>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <EmptyState
+              message={
+                items.length === 0
+                  ? "No images yet. Generate some in Chat to see them here."
+                  : "No images match this filter."
+              }
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredItems.map((item) => (
+                <ImageCard
+                  key={item.assistant.id}
+                  message={item.assistant}
+                  prompt={item.prompt}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

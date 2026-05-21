@@ -3,20 +3,14 @@
 import * as React from "react";
 import { toast } from "sonner";
 
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { defaultImageModel, type OptionItem } from "@/lib/chat/constants";
 import type { NewChatMessage } from "@/lib/chat/types";
 
-import { ChatSidebar } from "./_components/chat-sidebar";
+import { useWorkspaceData } from "../_context/workspace-data-context";
+
 import { Composer } from "./_components/composer";
 import { MessageList } from "./_components/message-list";
 import type { PendingTurn } from "./_components/message-bubble";
-import { useChatHistory } from "./_hooks/use-chat-history";
-import { useProviderSettings } from "./_hooks/use-provider-settings";
 
 type GenerateResponse = {
   image?: string;
@@ -37,16 +31,8 @@ function generateTurnId(): string {
 }
 
 export default function ChatPage() {
-  const {
-    status: providerStatus,
-    providers,
-    activeProvider,
-    activeProviderId,
-    setActiveProviderId,
-    createProvider,
-    saveProvider,
-    deleteProvider,
-  } = useProviderSettings();
+  const { chatHistory, providerSettings, selectedTurnId, setSelectedTurnId } =
+    useWorkspaceData();
   const {
     status: dbStatus,
     persistent,
@@ -55,7 +41,14 @@ export default function ChatPage() {
     deleteTurn,
     addTag,
     removeTag,
-  } = useChatHistory();
+  } = chatHistory;
+  const {
+    status: providerStatus,
+    providers,
+    activeProvider,
+    activeProviderId,
+    setActiveProviderId,
+  } = providerSettings;
 
   const [draft, setDraft] = React.useState("");
   const [model, setModel] = React.useState(defaultImageModel);
@@ -64,9 +57,6 @@ export default function ChatPage() {
   const [pendingTurn, setPendingTurn] = React.useState<PendingTurn | null>(
     null,
   );
-  const [scrollTargetTurnId, setScrollTargetTurnId] = React.useState<
-    string | null
-  >(null);
   const [selectedTurnIds, setSelectedTurnIds] = React.useState<Set<string>>(
     () => new Set(),
   );
@@ -233,8 +223,8 @@ export default function ChatPage() {
   }
 
   const handleScrollHandled = React.useCallback(() => {
-    setScrollTargetTurnId(null);
-  }, []);
+    setSelectedTurnId(null);
+  }, [setSelectedTurnId]);
 
   const clearSelection = React.useCallback(() => {
     setSelectedTurnIds(new Set());
@@ -256,9 +246,7 @@ export default function ChatPage() {
     async (turnId: string) => {
       try {
         await deleteTurn(turnId);
-        setScrollTargetTurnId((current) =>
-          current === turnId ? null : current,
-        );
+        setSelectedTurnId((current) => (current === turnId ? null : current));
         setSelectedTurnIds((current) => {
           if (!current.has(turnId)) return current;
           const next = new Set(current);
@@ -270,7 +258,7 @@ export default function ChatPage() {
         toast.error("Failed to delete message.");
       }
     },
-    [deleteTurn],
+    [deleteTurn, setSelectedTurnId],
   );
 
   const handleDeleteSelectedTurns = React.useCallback(async () => {
@@ -279,7 +267,7 @@ export default function ChatPage() {
 
     try {
       await Promise.all(turnIds.map((turnId) => deleteTurn(turnId)));
-      setScrollTargetTurnId((current) =>
+      setSelectedTurnId((current) =>
         current && selectedTurnIds.has(current) ? null : current,
       );
       clearSelection();
@@ -287,7 +275,7 @@ export default function ChatPage() {
       console.error("[chat] failed to delete selected turns", err);
       toast.error("Failed to delete selected messages.");
     }
-  }, [clearSelection, deleteTurn, selectedTurnIds]);
+  }, [clearSelection, deleteTurn, selectedTurnIds, setSelectedTurnId]);
 
   const handleAddTag = React.useCallback(
     async (messageId: string, tagName: string) => {
@@ -314,73 +302,57 @@ export default function ChatPage() {
   );
 
   return (
-    <SidebarProvider className="h-dvh min-h-0">
-      <ChatSidebar
-        messages={messages}
-        selectedTurnId={scrollTargetTurnId}
-        onSelectTurn={(turnId) => setScrollTargetTurnId(turnId)}
-        providers={providers}
-        activeProviderId={activeProviderId}
-        onSelectProvider={setActiveProviderId}
-        onCreateProvider={createProvider}
-        onSaveProvider={saveProvider}
-        onDeleteProvider={deleteProvider}
-      />
+    <>
+      <div className="flex flex-1 flex-col overflow-hidden pt-12">
+        <MessageList
+          messages={messages}
+          pendingTurn={pendingTurn}
+          isEmpty={messages.length === 0 && !pendingTurn}
+          onPickSample={(prompt) => setDraft(prompt)}
+          onEditPrompt={(prompt) => setDraft(prompt)}
+          onDeleteTurn={(turnId) => {
+            void handleDeleteTurn(turnId);
+          }}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          selectedTurnIds={selectedTurnIds}
+          onToggleTurnSelection={toggleTurnSelection}
+          onClearSelection={clearSelection}
+          onDeleteSelectedTurns={() => {
+            void handleDeleteSelectedTurns();
+          }}
+          scrollTargetTurnId={selectedTurnId}
+          onScrollHandled={handleScrollHandled}
+        />
+      </div>
 
-      <SidebarInset className="overflow-hidden">
-        <SidebarTrigger className="absolute top-3 left-3 z-10" />
-
-        <div className="flex flex-1 flex-col overflow-hidden pt-12">
-          <MessageList
-            messages={messages}
-            pendingTurn={pendingTurn}
-            isEmpty={messages.length === 0 && !pendingTurn}
-            onPickSample={(prompt) => setDraft(prompt)}
-            onEditPrompt={(prompt) => setDraft(prompt)}
-            onDeleteTurn={(turnId) => {
-              void handleDeleteTurn(turnId);
+      <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
+        <div className="mx-auto w-full max-w-2xl">
+          <Composer
+            draft={draft}
+            onDraftChange={setDraft}
+            provider={activeProviderId ?? ""}
+            providerOptions={providerOptions}
+            onProviderChange={setActiveProviderId}
+            model={selectedModel}
+            modelOptions={providerModelOptions}
+            onModelChange={setModel}
+            size={size}
+            onSizeChange={setSize}
+            quality={quality}
+            onQualityChange={setQuality}
+            onSubmit={() => {
+              void handleSubmit();
             }}
-            onAddTag={handleAddTag}
-            onRemoveTag={handleRemoveTag}
-            selectedTurnIds={selectedTurnIds}
-            onToggleTurnSelection={toggleTurnSelection}
-            onClearSelection={clearSelection}
-            onDeleteSelectedTurns={() => {
-              void handleDeleteSelectedTurns();
-            }}
-            scrollTargetTurnId={scrollTargetTurnId}
-            onScrollHandled={handleScrollHandled}
+            isGenerating={isGenerating}
+            isReady={isReady}
           />
+          <p className="mt-2 text-center text-[11px] text-stone">
+            Each prompt generates an independent image. Multi-turn editing is
+            not yet supported.
+          </p>
         </div>
-
-        <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
-          <div className="mx-auto w-full max-w-2xl">
-            <Composer
-              draft={draft}
-              onDraftChange={setDraft}
-              provider={activeProviderId ?? ""}
-              providerOptions={providerOptions}
-              onProviderChange={setActiveProviderId}
-              model={selectedModel}
-              modelOptions={providerModelOptions}
-              onModelChange={setModel}
-              size={size}
-              onSizeChange={setSize}
-              quality={quality}
-              onQualityChange={setQuality}
-              onSubmit={() => {
-                void handleSubmit();
-              }}
-              isGenerating={isGenerating}
-              isReady={isReady}
-            />
-            <p className="mt-2 text-center text-[11px] text-stone">
-              Each prompt generates an independent image. Multi-turn editing is
-              not yet supported.
-            </p>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </>
   );
 }
