@@ -6,6 +6,8 @@ import Image from "next/image";
 import {
   AlertCircle,
   Check,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Download,
   Expand,
@@ -94,6 +96,78 @@ function MessageActionButton({
   );
 }
 
+type ExpandableTextProps = {
+  children: React.ReactNode;
+  clampLines?: number;
+  className?: string;
+  toggleClassName?: string;
+};
+
+function ExpandableText({
+  children,
+  clampLines = 2,
+  className,
+  toggleClassName,
+}: ExpandableTextProps) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isOverflowing, setIsOverflowing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isExpanded) return;
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      setIsOverflowing(el.scrollHeight - el.clientHeight > 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isExpanded, clampLines, children]);
+
+  return (
+    <div className={className}>
+      <div
+        ref={ref}
+        className="wrap-break-word whitespace-pre-wrap"
+        style={
+          !isExpanded
+            ? {
+                display: "-webkit-box",
+                WebkitLineClamp: clampLines,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }
+            : undefined
+        }
+      >
+        {children}
+      </div>
+      {(isOverflowing || isExpanded) && (
+        <button
+          type="button"
+          aria-label={isExpanded ? "Show less" : "Show more"}
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsExpanded((prev) => !prev);
+          }}
+          className={cn(
+            "mt-1 inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-md transition-colors duration-150",
+            toggleClassName,
+          )}
+        >
+          {isExpanded ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function UserBubble({
   message,
   avatarId,
@@ -164,7 +238,11 @@ export function UserBubble({
             "ring-2 ring-primary/35 ring-offset-2 ring-offset-background",
         )}
       >
-        <p className="wrap-break-word whitespace-pre-wrap">{message.content}</p>
+        <ExpandableText
+          toggleClassName="text-brand-purple-800/60 hover:bg-brand-purple-800/10 hover:text-brand-purple-800"
+        >
+          {message.content}
+        </ExpandableText>
       </div>
       <UserAvatar avatarId={avatarId} className="self-start" />
     </div>
@@ -273,12 +351,15 @@ export function AssistantBubble({
             </Dialog.Root>
           ) : null}
           {message.revisedPrompt ? (
-            <p className="mt-2.5 text-[12px] leading-relaxed text-steel">
+            <ExpandableText
+              className="mt-2.5 text-[12px] leading-relaxed text-steel"
+              toggleClassName="text-stone hover:bg-charcoal/5 hover:text-charcoal"
+            >
               <span className="font-medium text-charcoal">
                 Revised prompt:{" "}
               </span>
               {message.revisedPrompt}
-            </p>
+            </ExpandableText>
           ) : null}
           {metaLine ? (
             <p className="mt-2 text-[11px] tracking-tight text-stone">
