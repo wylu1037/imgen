@@ -5,9 +5,16 @@ import { ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Spinner } from "@/components/ui/spinner";
+import { Toggle } from "@/components/ui/toggle";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipPositioner,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/lib/chat/types";
 
-import { useWorkspaceData } from "../_context/workspace-data-context";
+import { useAppData } from "../_context/app-data-context";
 
 import { ImageCard } from "./_components/image-card";
 import { TagFilter } from "./_components/tag-filter";
@@ -21,9 +28,11 @@ type GalleryItem = {
 };
 
 export default function GalleryPage() {
-  const { chatHistory } = useWorkspaceData();
+  const { chatHistory, conversations } = useAppData();
   const { status, persistent, messages } = chatHistory;
+  const { activeConversationId, isFilterableActive } = conversations;
   const [selectedTag, setSelectedTag] = React.useState<string>(ALL_FILTER);
+  const [onlyCurrent, setOnlyCurrent] = React.useState(false);
   const persistenceWarnedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -58,10 +67,17 @@ export default function GalleryPage() {
     return result.reverse();
   }, [messages]);
 
+  const conversationScoped = React.useMemo(() => {
+    if (!onlyCurrent || !activeConversationId) return items;
+    return items.filter(
+      (item) => item.assistant.conversationId === activeConversationId,
+    );
+  }, [items, onlyCurrent, activeConversationId]);
+
   const tagOptions = React.useMemo(() => {
     const counts = new Map<string, number>();
     let untagged = 0;
-    for (const item of items) {
+    for (const item of conversationScoped) {
       if (item.assistant.tags.length === 0) {
         untagged += 1;
         continue;
@@ -76,23 +92,25 @@ export default function GalleryPage() {
         a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
       );
     return [
-      { value: ALL_FILTER, label: "All", count: items.length },
+      { value: ALL_FILTER, label: "All", count: conversationScoped.length },
       ...tagEntries,
       { value: UNTAGGED_FILTER, label: "Untagged", count: untagged },
     ];
-  }, [items]);
+  }, [conversationScoped]);
 
   const filteredItems = React.useMemo(() => {
-    if (selectedTag === ALL_FILTER) return items;
+    if (selectedTag === ALL_FILTER) return conversationScoped;
     if (selectedTag === UNTAGGED_FILTER) {
-      return items.filter((item) => item.assistant.tags.length === 0);
+      return conversationScoped.filter(
+        (item) => item.assistant.tags.length === 0,
+      );
     }
-    return items.filter((item) =>
+    return conversationScoped.filter((item) =>
       item.assistant.tags.some(
         (tag) => tag.name.toLowerCase() === selectedTag.toLowerCase(),
       ),
     );
-  }, [items, selectedTag]);
+  }, [conversationScoped, selectedTag]);
 
   const isLoading = status === "loading" || status === "idle";
 
@@ -108,15 +126,37 @@ export default function GalleryPage() {
               Browse and filter your generated images by tag.
             </p>
           </div>
-          {tagOptions.length > 1 ? (
-            <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Toggle
+                    pressed={onlyCurrent}
+                    onPressedChange={setOnlyCurrent}
+                    disabled={!isFilterableActive}
+                    aria-label="Filter to current conversation"
+                    className="h-7 rounded-full px-3 text-[11px]"
+                  >
+                    Current conversation only
+                  </Toggle>
+                }
+              />
+              {!isFilterableActive ? (
+                <TooltipPositioner side="top">
+                  <TooltipContent>
+                    Switch to a saved conversation to filter.
+                  </TooltipContent>
+                </TooltipPositioner>
+              ) : null}
+            </Tooltip>
+            {tagOptions.length > 1 ? (
               <TagFilter
                 options={tagOptions}
                 selected={selectedTag}
                 onSelect={setSelectedTag}
               />
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -132,7 +172,9 @@ export default function GalleryPage() {
               message={
                 items.length === 0
                   ? "No images yet. Generate some in Chat to see them here."
-                  : "No images match this filter."
+                  : onlyCurrent
+                    ? "No images in this conversation yet."
+                    : "No images match this filter."
               }
             />
           ) : (

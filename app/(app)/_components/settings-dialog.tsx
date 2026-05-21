@@ -47,7 +47,7 @@ import { defaultImageModel } from "@/lib/chat/constants";
 import type { ProviderConfig } from "@/lib/chat/types";
 import { cn } from "@/lib/utils";
 
-import { useWorkspaceData } from "../_context/workspace-data-context";
+import { useAppData } from "../_context/app-data-context";
 import type { StorageInfo } from "@/lib/chat/db-client";
 
 type SettingsDialogProps = {
@@ -791,7 +791,7 @@ function formatBytes(bytes: number): string {
 }
 
 function StorageSection() {
-  const { chatHistory, providerSettings } = useWorkspaceData();
+  const { chatHistory, providerSettings } = useAppData();
   const { status: dbStatus, getStorageInfo, clearAll: clearChat } = chatHistory;
   const { clearAll: clearProviders } = providerSettings;
 

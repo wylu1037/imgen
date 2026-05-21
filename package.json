@@ -24,6 +24,7 @@
     "motion": "^12.39.0",
     "next": "latest",
     "openai": "latest",
+    "radix-ui": "^1.4.3",
     "react": "latest",
     "react-dom": "latest",
     "sonner": "^2.0.7",

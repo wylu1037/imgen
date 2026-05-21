@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { defaultImageModel, type OptionItem } from "@/lib/chat/constants";
 import type { NewChatMessage } from "@/lib/chat/types";
 
-import { useWorkspaceData } from "../_context/workspace-data-context";
+import { useAppData } from "../_context/app-data-context";
 
 import { Composer } from "./_components/composer";
 import { MessageList } from "./_components/message-list";
@@ -31,8 +31,13 @@ function generateTurnId(): string {
 }
 
 export default function ChatPage() {
-  const { chatHistory, providerSettings, selectedTurnId, setSelectedTurnId } =
-    useWorkspaceData();
+  const {
+    chatHistory,
+    providerSettings,
+    conversations,
+    getSelectedTurn,
+    setSelectedTurn,
+  } = useAppData();
   const {
     status: dbStatus,
     persistent,
@@ -49,6 +54,8 @@ export default function ChatPage() {
     activeProviderId,
     setActiveProviderId,
   } = providerSettings;
+  const { activeConversationId, ensureDraft, persistDraft, touchLocal } =
+    conversations;
 
   const [draft, setDraft] = React.useState("");
   const [model, setModel] = React.useState(defaultImageModel);
@@ -101,6 +108,26 @@ export default function ChatPage() {
     }
   }, [dbStatus]);
 
+  // when chat opens without an active conversation, mint a draft so the
+  // sidebar shows something and the first message can flush it.
+  React.useEffect(() => {
+    if (dbStatus !== "ready") return;
+    if (activeConversationId) return;
+    ensureDraft();
+  }, [dbStatus, activeConversationId, ensureDraft]);
+
+  const conversationMessages = React.useMemo(
+    () =>
+      activeConversationId
+        ? messages.filter((m) => m.conversationId === activeConversationId)
+        : [],
+    [messages, activeConversationId],
+  );
+
+  const selectedTurnId = activeConversationId
+    ? getSelectedTurn(activeConversationId)
+    : null;
+
   const isReady =
     (dbStatus === "ready" || dbStatus === "error") &&
     (providerStatus === "ready" || providerStatus === "error");
@@ -129,9 +156,27 @@ export default function ChatPage() {
       }
     }
 
+    // capture conversation id at submit time — even if the user switches
+    // conversations mid-fetch, the assistant reply still lands in the right turn.
+    let submitConversationId = activeConversationId;
+    if (conversations.activeConversation?.isDraft) {
+      try {
+        submitConversationId = await persistDraft(trimmedPrompt);
+      } catch (err) {
+        console.error("[chat] failed to persist draft conversation", err);
+        toast.error("Failed to create conversation.");
+        return;
+      }
+    }
+    if (!submitConversationId) {
+      toast.error("No active conversation.");
+      return;
+    }
+
     const turnId = generateTurnId();
 
     const userMessage: NewChatMessage = {
+      conversationId: submitConversationId,
       turnId,
       role: "user",
       content: trimmedPrompt,
@@ -148,6 +193,8 @@ export default function ChatPage() {
       await append(userMessage);
     } catch (err) {
       console.error("[chat] failed to persist user message", err);
+      toast.error("Failed to save message.");
+      return;
     }
 
     setDraft("");
@@ -181,6 +228,7 @@ export default function ChatPage() {
       }
 
       assistant = {
+        conversationId: submitConversationId,
         turnId,
         role: "assistant",
         content: "",
@@ -200,6 +248,7 @@ export default function ChatPage() {
         err instanceof Error ? err.message : "Image generation failed.";
       toast.error(message);
       assistant = {
+        conversationId: submitConversationId,
         turnId,
         role: "assistant",
         content: "",
@@ -217,14 +266,18 @@ export default function ChatPage() {
 
     try {
       await append(assistant);
+      // bump conversation order locally — db side already bumped via insert.
+      touchLocal(submitConversationId, Date.now());
     } catch (err) {
       console.error("[chat] failed to persist assistant message", err);
     }
   }
 
   const handleScrollHandled = React.useCallback(() => {
-    setSelectedTurnId(null);
-  }, [setSelectedTurnId]);
+    if (activeConversationId) {
+      setSelectedTurn(activeConversationId, null);
+    }
+  }, [activeConversationId, setSelectedTurn]);
 
   const clearSelection = React.useCallback(() => {
     setSelectedTurnIds(new Set());
@@ -246,7 +299,12 @@ export default function ChatPage() {
     async (turnId: string) => {
       try {
         await deleteTurn(turnId);
-        setSelectedTurnId((current) => (current === turnId ? null : current));
+        if (
+          activeConversationId &&
+          getSelectedTurn(activeConversationId) === turnId
+        ) {
+          setSelectedTurn(activeConversationId, null);
+        }
         setSelectedTurnIds((current) => {
           if (!current.has(turnId)) return current;
           const next = new Set(current);
@@ -258,7 +316,7 @@ export default function ChatPage() {
         toast.error("Failed to delete message.");
       }
     },
-    [deleteTurn, setSelectedTurnId],
+    [activeConversationId, deleteTurn, getSelectedTurn, setSelectedTurn],
   );
 
   const handleDeleteSelectedTurns = React.useCallback(async () => {
@@ -267,15 +325,25 @@ export default function ChatPage() {
 
     try {
       await Promise.all(turnIds.map((turnId) => deleteTurn(turnId)));
-      setSelectedTurnId((current) =>
-        current && selectedTurnIds.has(current) ? null : current,
-      );
+      if (activeConversationId) {
+        const current = getSelectedTurn(activeConversationId);
+        if (current && selectedTurnIds.has(current)) {
+          setSelectedTurn(activeConversationId, null);
+        }
+      }
       clearSelection();
     } catch (err) {
       console.error("[chat] failed to delete selected turns", err);
       toast.error("Failed to delete selected messages.");
     }
-  }, [clearSelection, deleteTurn, selectedTurnIds, setSelectedTurnId]);
+  }, [
+    activeConversationId,
+    clearSelection,
+    deleteTurn,
+    getSelectedTurn,
+    selectedTurnIds,
+    setSelectedTurn,
+  ]);
 
   const handleAddTag = React.useCallback(
     async (messageId: string, tagName: string) => {
@@ -305,9 +373,9 @@ export default function ChatPage() {
     <>
       <div className="flex flex-1 flex-col overflow-hidden pt-12">
         <MessageList
-          messages={messages}
+          messages={conversationMessages}
           pendingTurn={pendingTurn}
-          isEmpty={messages.length === 0 && !pendingTurn}
+          isEmpty={conversationMessages.length === 0 && !pendingTurn}
           onPickSample={(prompt) => setDraft(prompt)}
           onEditPrompt={(prompt) => setDraft(prompt)}
           onDeleteTurn={(turnId) => {

@@ -20,6 +20,8 @@ type UseChatHistory = {
   addTag: (messageId: string, tagName: string) => Promise<Tag | null>;
   removeTag: (messageId: string, tagId: string) => Promise<void>;
   getStorageInfo: () => Promise<StorageInfo | null>;
+  dbRef: React.MutableRefObject<ChatDb | null>;
+  dbReady: boolean;
 };
 
 export function useChatHistory(): UseChatHistory {
@@ -133,5 +135,7 @@ export function useChatHistory(): UseChatHistory {
     addTag,
     removeTag,
     getStorageInfo,
+    dbRef,
+    dbReady: status === "ready",
   };
 }

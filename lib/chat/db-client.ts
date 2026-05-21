@@ -1,27 +1,40 @@
 import type {
   ChatMessage,
+  Conversation,
   NewChatMessage,
   ProviderConfig,
   Tag,
 } from "./types";
 
 const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS conversations (
+    id          TEXT PRIMARY KEY,
+    title       TEXT NOT NULL DEFAULT '',
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_conversations_updated_at ON conversations(updated_at);
+
   CREATE TABLE IF NOT EXISTS messages (
-    id             TEXT PRIMARY KEY,
-    turn_id        TEXT NOT NULL,
-    role           TEXT NOT NULL,
-    content        TEXT NOT NULL DEFAULT '',
-    image_data     TEXT,
-    model          TEXT,
-    size           TEXT,
-    quality        TEXT,
-    revised_prompt TEXT,
-    error          TEXT,
-    duration_ms    INTEGER,
-    created_at     INTEGER NOT NULL
+    id              TEXT PRIMARY KEY,
+    conversation_id TEXT,
+    turn_id         TEXT NOT NULL,
+    role            TEXT NOT NULL,
+    content         TEXT NOT NULL DEFAULT '',
+    image_data      TEXT,
+    model           TEXT,
+    size            TEXT,
+    quality         TEXT,
+    revised_prompt  TEXT,
+    error           TEXT,
+    duration_ms     INTEGER,
+    created_at      INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
   CREATE INDEX IF NOT EXISTS idx_messages_turn ON messages(turn_id);
+  -- idx_messages_conversation is created in the v5 migration after ALTER TABLE
+  -- so that legacy databases (where the column does not exist yet) don't fail
+  -- when this batch runs before the migration.
 
   CREATE TABLE IF NOT EXISTS providers (
     id            TEXT PRIMARY KEY,
@@ -60,6 +73,7 @@ const SCHEMA_SQL = `
 
 const WORKER_URL = "/sqlite-wasm/sqlite3-worker1.mjs";
 const ACTIVE_PROVIDER_KEY = "active_provider_id";
+const DEFAULT_CONVERSATION_ID = "default";
 
 export type StorageInfo = {
   location: string;
@@ -68,6 +82,7 @@ export type StorageInfo = {
   messageCount: number;
   providerCount: number;
   tagCount: number;
+  conversationCount: number;
 };
 
 export interface ChatDb {
@@ -75,6 +90,14 @@ export interface ChatDb {
   loadAll: () => Promise<ChatMessage[]>;
   deleteTurn: (turnId: string) => Promise<void>;
   clearAll: () => Promise<void>;
+  loadConversations: () => Promise<Conversation[]>;
+  createConversation: (input: {
+    id?: string;
+    title?: string;
+  }) => Promise<Conversation>;
+  renameConversation: (id: string, title: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<void>;
+  touchConversation: (id: string) => Promise<void>;
   loadProviders: () => Promise<ProviderConfig[]>;
   upsertProvider: (provider: ProviderConfig) => Promise<void>;
   deleteProvider: (providerId: string) => Promise<void>;
@@ -179,6 +202,8 @@ class Promiser {
 function rowToMessage(row: Row): ChatMessage {
   return {
     id: String(row.id),
+    conversationId:
+      row.conversation_id == null ? "" : String(row.conversation_id),
     turnId: String(row.turn_id),
     role: row.role === "assistant" ? "assistant" : "user",
     content: typeof row.content === "string" ? row.content : "",
@@ -200,6 +225,15 @@ function rowToMessage(row: Row): ChatMessage {
         ? row.created_at
         : Number(row.created_at) || 0,
     tags: [],
+  };
+}
+
+function rowToConversation(row: Row): Conversation {
+  return {
+    id: String(row.id),
+    title: typeof row.title === "string" ? row.title : "",
+    createdAt: toNumber(row.created_at),
+    updatedAt: toNumber(row.updated_at),
   };
 }
 
@@ -290,7 +324,7 @@ async function openDb(
   return { dbId, vfs: result?.vfs, persistent: result?.persistent };
 }
 
-const TARGET_USER_VERSION = 4;
+const TARGET_USER_VERSION = 5;
 
 async function migrate(promiser: Promiser, dbId: string): Promise<void> {
   const rows = await selectRows(promiser, dbId, "PRAGMA user_version");
@@ -314,6 +348,70 @@ async function migrate(promiser: Promiser, dbId: string): Promise<void> {
   // v4: tags + message_tags tables are created by SCHEMA_SQL via
   // CREATE TABLE IF NOT EXISTS, so existing databases automatically pick them
   // up. Only the user_version bump is needed.
+
+  if (current < 5) {
+    await promiser.send("exec", { dbId, sql: "BEGIN IMMEDIATE" });
+    try {
+      // double-check: another tab may have completed the migration while we
+      // were waiting for the lock.
+      const recheck = await selectRows(
+        promiser,
+        dbId,
+        "PRAGMA user_version",
+      );
+      if (toNumber(recheck[0]?.user_version ?? 0) < 5) {
+        const cols = await selectRows(
+          promiser,
+          dbId,
+          "PRAGMA table_info(messages)",
+        );
+        const hasConv = cols.some(
+          (row) => String(row.name) === "conversation_id",
+        );
+        if (!hasConv) {
+          await promiser.send("exec", {
+            dbId,
+            sql: "ALTER TABLE messages ADD COLUMN conversation_id TEXT",
+          });
+        }
+
+        await promiser.send("exec", {
+          dbId,
+          sql: "CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id)",
+        });
+
+        const orphanRows = await selectRows(
+          promiser,
+          dbId,
+          "SELECT COUNT(*) AS n FROM messages WHERE conversation_id IS NULL OR conversation_id = ''",
+        );
+        if (toNumber(orphanRows[0]?.n ?? 0) > 0) {
+          const now = Date.now();
+          await promiser.send("exec", {
+            dbId,
+            sql: "INSERT OR IGNORE INTO conversations (id, title, created_at, updated_at) VALUES (?, ?, ?, ?)",
+            bind: [DEFAULT_CONVERSATION_ID, "Default", now, now],
+          });
+          await promiser.send("exec", {
+            dbId,
+            sql: "UPDATE messages SET conversation_id = ? WHERE conversation_id IS NULL OR conversation_id = ''",
+            bind: [DEFAULT_CONVERSATION_ID],
+          });
+        }
+
+        await promiser.send("exec", {
+          dbId,
+          sql: "PRAGMA user_version = 5",
+        });
+      }
+      await promiser.send("exec", { dbId, sql: "COMMIT" });
+    } catch (err) {
+      await promiser
+        .send("exec", { dbId, sql: "ROLLBACK" })
+        .catch(() => {});
+      throw err;
+    }
+  }
 
   if (current !== TARGET_USER_VERSION) {
     await promiser.send("exec", {
@@ -369,12 +467,13 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         sql: `
           INSERT INTO messages (
-            id, turn_id, role, content, image_data,
+            id, conversation_id, turn_id, role, content, image_data,
             model, size, quality, revised_prompt, error, duration_ms, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         bind: [
           id,
+          msg.conversationId,
           msg.turnId,
           msg.role,
           msg.content,
@@ -388,6 +487,13 @@ export async function openChatDb(): Promise<ChatDb> {
           createdAt,
         ],
       });
+      if (msg.conversationId) {
+        await promiser.send("exec", {
+          dbId,
+          sql: "UPDATE conversations SET updated_at = ? WHERE id = ?",
+          bind: [createdAt, msg.conversationId],
+        });
+      }
       return { id, createdAt, tags: [], ...msg };
     },
 
@@ -396,7 +502,7 @@ export async function openChatDb(): Promise<ChatDb> {
         promiser,
         dbId,
         `
-          SELECT id, turn_id, role, content, image_data,
+          SELECT id, conversation_id, turn_id, role, content, image_data,
                  model, size, quality, revised_prompt, error,
                  duration_ms, created_at
           FROM messages
@@ -466,7 +572,82 @@ export async function openChatDb(): Promise<ChatDb> {
           DELETE FROM message_tags;
           DELETE FROM tags;
           DELETE FROM messages;
+          DELETE FROM conversations;
         `,
+      });
+    },
+
+    async loadConversations() {
+      const resultRows = await selectRows(
+        promiser,
+        dbId,
+        `
+          SELECT id, title, created_at, updated_at
+          FROM conversations
+          ORDER BY updated_at DESC, created_at DESC, id ASC
+        `,
+      );
+      return resultRows.map(rowToConversation);
+    },
+
+    async createConversation(input) {
+      const id = input.id ?? generateId();
+      const title = input.title ?? "";
+      const now = Date.now();
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          INSERT INTO conversations (id, title, created_at, updated_at)
+          VALUES (?, ?, ?, ?)
+        `,
+        bind: [id, title, now, now],
+      });
+      return { id, title, createdAt: now, updatedAt: now };
+    },
+
+    async renameConversation(id, title) {
+      const now = Date.now();
+      await promiser.send("exec", {
+        dbId,
+        sql: "UPDATE conversations SET title = ?, updated_at = ? WHERE id = ?",
+        bind: [title, now, id],
+      });
+    },
+
+    async deleteConversation(id) {
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM message_tags
+          WHERE message_id IN (SELECT id FROM messages WHERE conversation_id = ?)
+        `,
+        bind: [id],
+      });
+      await promiser.send("exec", {
+        dbId,
+        sql: "DELETE FROM messages WHERE conversation_id = ?",
+        bind: [id],
+      });
+      await promiser.send("exec", {
+        dbId,
+        sql: `
+          DELETE FROM tags
+          WHERE id NOT IN (SELECT DISTINCT tag_id FROM message_tags)
+        `,
+      });
+      await promiser.send("exec", {
+        dbId,
+        sql: "DELETE FROM conversations WHERE id = ?",
+        bind: [id],
+      });
+    },
+
+    async touchConversation(id) {
+      const now = Date.now();
+      await promiser.send("exec", {
+        dbId,
+        sql: "UPDATE conversations SET updated_at = ? WHERE id = ?",
+        bind: [now, id],
       });
     },
 
@@ -657,6 +838,11 @@ export async function openChatDb(): Promise<ChatDb> {
         dbId,
         "SELECT COUNT(*) AS n FROM tags",
       );
+      const conversationRows = await selectRows(
+        promiser,
+        dbId,
+        "SELECT COUNT(*) AS n FROM conversations",
+      );
 
       return {
         location: persistent
@@ -667,6 +853,7 @@ export async function openChatDb(): Promise<ChatDb> {
         messageCount: toNumber(messageRows[0]?.n ?? 0),
         providerCount: toNumber(providerRows[0]?.n ?? 0),
         tagCount: toNumber(tagRows[0]?.n ?? 0),
+        conversationCount: toNumber(conversationRows[0]?.n ?? 0),
       };
     },
 

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import { WorkspaceSidebar } from "./_components/workspace-sidebar";
-import { WorkspaceDataProvider } from "./_context/workspace-data-context";
+import { AppDataProvider } from "./_context/app-data-context";
 
 export default function WorkspaceLayout({
   children,
@@ -17,7 +17,7 @@ export default function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   return (
-    <WorkspaceDataProvider>
+    <AppDataProvider>
       <SidebarProvider className="h-dvh min-h-0">
         <WorkspaceSidebar />
         <SidebarInset className="overflow-hidden">
@@ -25,6 +25,6 @@ export default function WorkspaceLayout({
           {children}
         </SidebarInset>
       </SidebarProvider>
-    </WorkspaceDataProvider>
+    </AppDataProvider>
   );
 }
