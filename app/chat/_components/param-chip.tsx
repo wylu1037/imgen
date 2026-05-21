@@ -51,11 +51,13 @@ export function ParamChip({
             className={cn(
               "inline-flex max-w-full min-w-0 transition-all duration-150",
               hasSelectedValue
-                ? "font-semibold tracking-[-0.015em] text-charcoal"
+                ? "font-medium tracking-[-0.015em] text-charcoal"
                 : "text-slate",
             )}
           >
-            <span className="truncate leading-none">{selected?.label ?? value}</span>
+            <span className="truncate leading-none">
+              {selected?.label ?? value}
+            </span>
           </span>
         </Select.Value>
         <Select.Icon>

@@ -2,27 +2,21 @@
 
 import * as React from "react";
 
-export type Theme = "light" | "dark" | "system";
+import { DEFAULT_THEME, isValidTheme, type StyleTheme } from "@/lib/themes";
 
 const STORAGE_KEY = "imgen-theme";
 
-function getSystemTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-function applyTheme(theme: Theme) {
+function applyTheme(theme: StyleTheme) {
   if (typeof document === "undefined") return;
-  const resolved = theme === "system" ? getSystemTheme() : theme;
-  document.documentElement.classList.toggle("dark", resolved === "dark");
+  document.documentElement.setAttribute("data-theme", theme);
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = React.useState<Theme>(() => {
-    if (typeof window === "undefined") return "system";
-    return (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
+  const [theme, setThemeState] = React.useState<StyleTheme>(() => {
+    if (typeof window === "undefined") return DEFAULT_THEME;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && isValidTheme(stored)) return stored;
+    return DEFAULT_THEME;
   });
 
   React.useEffect(() => {
@@ -30,13 +24,7 @@ export function useTheme() {
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
-  React.useEffect(() => {
-    if (theme !== "system") return;
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => applyTheme("system");
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [theme]);
-
   return { theme, setTheme: setThemeState };
 }
+
+export type { StyleTheme as Theme };

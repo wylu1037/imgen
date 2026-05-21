@@ -7,15 +7,13 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  Monitor,
-  Moon,
   Palette,
   Plug,
   Plus,
   RefreshCw,
-  Sun,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,7 +22,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -39,9 +36,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useTheme, type Theme } from "@/hooks/use-theme";
+import { useTheme } from "@/hooks/use-theme";
 import { useUserAvatar } from "@/hooks/use-user-avatar";
+import { THEMES, type StyleTheme } from "@/lib/themes";
 import { userAvatars } from "@/lib/avatars";
 import { defaultImageModel } from "@/lib/chat/constants";
 import type { ProviderConfig } from "@/lib/chat/types";
@@ -248,6 +245,17 @@ export function SettingsDialog({
         showCloseButton={false}
         className="grid h-[min(620px,calc(100vh-4rem))] w-[min(820px,calc(100vw-2rem))] max-w-none gap-0 overflow-hidden p-0 text-[12px] sm:max-w-none md:grid-cols-[200px_1fr]"
       >
+        <DialogClose
+          render={
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute top-3 right-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-steel transition-colors duration-150 ease-out hover:bg-tint-gray hover:text-ink focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
+            >
+              <X className="size-4" />
+            </button>
+          }
+        />
         <aside className="border-b border-hairline-soft bg-surface-soft/80 p-2.5 md:border-r md:border-b-0">
           <div className="px-2 pt-1 pb-3">
             <DialogTitle className="text-[12px] font-semibold text-ink">
@@ -313,6 +321,7 @@ export function SettingsDialog({
                   onDeleteProvider={onDeleteProvider}
                   onUpdateDraft={updateDraft}
                   onLoadModels={handleLoadModels}
+                  onSave={handleSave}
                 />
               ) : section === "appearance" ? (
                 <AppearanceSection />
@@ -321,31 +330,6 @@ export function SettingsDialog({
               )}
             </div>
           </ScrollArea>
-
-          <DialogFooter className="flex items-center justify-end gap-2 border-t border-hairline-soft bg-card px-5 py-3">
-            <DialogClose
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-[12px]"
-                >
-                  Cancel
-                </Button>
-              }
-            />
-            {section === "provider" ? (
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSave}
-                className="h-8 text-[12px]"
-              >
-                Save
-              </Button>
-            ) : null}
-          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>
@@ -366,6 +350,7 @@ type ProviderSectionProps = {
   onDeleteProvider: (providerId: string) => void;
   onUpdateDraft: (key: keyof ProviderDraft, value: string | string[]) => void;
   onLoadModels: () => void;
+  onSave: () => void;
 };
 
 function ProviderSection({
@@ -382,6 +367,7 @@ function ProviderSection({
   onDeleteProvider,
   onUpdateDraft,
   onLoadModels,
+  onSave,
 }: ProviderSectionProps) {
   const [showApiKey, setShowApiKey] = React.useState(false);
   return (
@@ -608,6 +594,17 @@ function ProviderSection({
               {modelsError}
             </p>
           </div>
+
+          <div className="flex justify-end pt-3">
+            <Button
+              type="button"
+              size="sm"
+              onClick={onSave}
+              className="h-8 text-[12px]"
+            >
+              Save
+            </Button>
+          </div>
         </div>
       ) : null}
     </>
@@ -616,74 +613,98 @@ function ProviderSection({
 
 function AppearanceSection() {
   const { theme, setTheme } = useTheme();
-  const options: Array<{
-    value: Theme;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    description: string;
-  }> = [
-    {
-      value: "light",
-      label: "Light",
-      icon: Sun,
-      description: "Bright surfaces, default palette.",
-    },
-    {
-      value: "dark",
-      label: "Dark",
-      icon: Moon,
-      description: "Dimmed surfaces for low-light.",
-    },
-    {
-      value: "system",
-      label: "System",
-      icon: Monitor,
-      description: "Match your OS preference.",
-    },
-  ];
 
   return (
     <>
       <div className="mb-4">
-        <h3 className="text-[12px] font-semibold text-ink">Theme</h3>
+        <h3 className="text-[12px] font-semibold text-ink">Style</h3>
         <p className="mt-0.5 text-[11px] leading-4 text-steel">
-          Choose how the workspace looks. System follows your operating system
-          setting.
+          Pick a visual identity for the workspace.
         </p>
       </div>
 
-      <ToggleGroup
-        value={[theme]}
-        onValueChange={(next) => {
-          const value = next[0];
-          if (value) setTheme(value as Theme);
-        }}
-        variant="outline"
-        className="grid w-full grid-cols-1 gap-2 sm:grid-cols-3"
-      >
-        {options.map(({ value, label, icon: Icon, description }) => (
-          <ToggleGroupItem
-            key={value}
-            value={value}
-            aria-label={label}
-            className={cn(
-              "flex h-auto w-full flex-col items-start gap-1.5 rounded-lg border border-hairline-soft bg-card p-3 text-left",
-              "data-[state=on]:border-primary/35 data-[state=on]:bg-tint-lavender data-[state=on]:text-brand-purple-800",
-            )}
-          >
-            <span className="flex w-full items-center justify-between">
-              <Icon className="size-3.5" />
-              {theme === value ? (
-                <Check className="size-3 text-primary" />
-              ) : null}
-            </span>
-            <span className="text-[12px] font-medium">{label}</span>
-            <span className="text-[11px] leading-4 text-steel">
-              {description}
-            </span>
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+      <div className="grid grid-cols-2 gap-2.5">
+        {THEMES.map((t) => {
+          const isActive = theme === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTheme(t.id)}
+              aria-label={t.name}
+              className={cn(
+                "relative flex flex-col overflow-hidden rounded-lg border text-left transition-all duration-150 ease-out",
+                "focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
+                isActive
+                  ? "border-primary/45 ring-2 ring-primary/25"
+                  : "border-hairline-soft hover:border-hairline-strong",
+              )}
+            >
+              {/* Mini preview */}
+              <div
+                className="flex flex-col gap-1.5 p-2.5 pb-2"
+                style={{ backgroundColor: t.preview.bg }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className="h-3 w-8 rounded-[3px]"
+                    style={{ backgroundColor: t.preview.card }}
+                  />
+                  <div
+                    className="h-3 rounded-[3px] px-1.5"
+                    style={{
+                      backgroundColor: t.preview.primary,
+                      color: "#fff",
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <div
+                    className="h-1 w-10 rounded-full"
+                    style={{ backgroundColor: t.preview.foreground, opacity: 0.8 }}
+                  />
+                  <div
+                    className="h-1 w-7 rounded-full"
+                    style={{ backgroundColor: t.preview.mutedForeground, opacity: 0.5 }}
+                  />
+                </div>
+              </div>
+
+              {/* Label row */}
+              <div
+                className="flex items-center justify-between px-2.5 py-2"
+                style={{ backgroundColor: t.preview.card }}
+              >
+                <span className="flex flex-col">
+                  <span
+                    className="text-[12px] font-medium leading-tight"
+                    style={{ color: t.preview.foreground }}
+                  >
+                    {t.name}
+                  </span>
+                  <span
+                    className="mt-0.5 text-[10px] leading-3"
+                    style={{ color: t.preview.mutedForeground }}
+                  >
+                    {t.description}
+                  </span>
+                </span>
+                {isActive ? (
+                  <span
+                    className="inline-flex size-4 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: t.preview.primary }}
+                  >
+                    <Check
+                      className="size-2.5"
+                      style={{ color: t.preview.card }}
+                    />
+                  </span>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </>
   );
 }
