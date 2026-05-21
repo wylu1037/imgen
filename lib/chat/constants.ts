@@ -28,7 +28,7 @@ export const modelOptions: OptionItem[] = [
 ];
 
 export const samplePrompts = [
-  "A warm minimal desk workspace for AI image generation, Notion-inspired product design, soft surfaces, editorial lighting",
+  "Risograph illustration of a quiet bookstore on a rainy afternoon, limited palette of coral and indigo, grainy texture",
   "Studio photograph of a ceramic pour-over coffee setup, morning light, shallow depth of field, beige linen backdrop",
   "Portrait of a thoughtful young woman in a tailored wool coat, soft overcast light, 35mm film grain, muted earth tones",
   "Misty alpine valley at golden hour, layered ridgelines, cinematic wide shot, low contrast, painterly atmosphere",
@@ -38,6 +38,8 @@ export const samplePrompts = [
   "Macro shot of dew on a cobalt-blue dahlia, hyperreal detail, soft natural light, neutral cream background",
   "Cyberpunk night market in rain-slicked Tokyo alley, neon signage reflected in puddles, anamorphic lens flare",
   "Children's storybook illustration of a tiny astronaut planting flowers on a pastel-colored moon, gouache style",
+  "A warm minimal desk workspace for AI image generation, Notion-inspired product design, soft surfaces, editorial lighting"
+  
 ];
 
 export function pickRandomPrompt(currentPrompt: string): string {

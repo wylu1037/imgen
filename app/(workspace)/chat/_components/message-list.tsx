@@ -14,7 +14,7 @@ import {
   UserBubble,
   type PendingTurn,
 } from "./message-bubble";
-import { SamplePrompts } from "./sample-prompts";
+import { ChatEmptyState } from "./empty-state";
 
 type MessageListProps = {
   messages: ChatMessage[];
@@ -73,22 +73,7 @@ export function MessageList({
   }, [scrollTargetTurnId, onScrollHandled]);
 
   if (isEmpty) {
-    return (
-      <div className="flex h-full items-center justify-center px-4 py-12">
-        <div className="w-full max-w-2xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-[28px] font-semibold tracking-tight text-ink">
-              What would you like to generate?
-            </h1>
-            <p className="mt-2 text-[14px] text-steel">
-              Describe a scene, mood, or subject. Each prompt generates an
-              independent image.
-            </p>
-          </div>
-          <SamplePrompts onPick={onPickSample} />
-        </div>
-      </div>
-    );
+    return <ChatEmptyState onPickSample={onPickSample} />;
   }
 
   return (
