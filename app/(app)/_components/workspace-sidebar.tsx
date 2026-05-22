@@ -406,7 +406,7 @@ export function WorkspaceSidebar() {
               variant="ghost"
               size="sm"
               onClick={() => setRenameTarget(null)}
-              className="h-8 text-[12px]!"
+              className="h-7 text-[12px]!"
             >
               Cancel
             </Button>
@@ -415,7 +415,7 @@ export function WorkspaceSidebar() {
               size="sm"
               onClick={() => void handleRenameSubmit()}
               disabled={!renameValue.trim()}
-              className="h-8 text-[12px]!"
+              className="h-7 text-[12px]!"
             >
               Save
             </Button>
@@ -443,13 +443,13 @@ export function WorkspaceSidebar() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel size="sm" className="h-8 text-[12px]!">
+            <AlertDialogCancel size="sm" className="h-7 text-[12px]!">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               size="sm"
               onClick={() => void handleDeleteConfirm()}
-              className="h-8 bg-destructive text-[12px]! text-white hover:bg-destructive/90"
+              className="h-7 bg-destructive text-[12px]! text-white hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
