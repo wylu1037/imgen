@@ -16,7 +16,7 @@ type TagFilterProps = {
 
 export function TagFilter({ options, selected, onSelect }: TagFilterProps) {
   return (
-    <div className="flex flex-wrap gap-3 pt-2">
+    <div className="flex flex-wrap gap-3">
       {options.map((option) => {
         const isActive = option.value === selected;
         return (

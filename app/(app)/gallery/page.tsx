@@ -135,7 +135,7 @@ export default function GalleryPage() {
             </p>
           </div>
           {tagOptions.length > 1 || isFilterableActive ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 pt-2">
               {tagOptions.length > 1 ? (
                 <TagFilter
                   options={tagOptions}

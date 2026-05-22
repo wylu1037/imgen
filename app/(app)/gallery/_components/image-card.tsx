@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { Dialog } from "@base-ui/react/dialog";
-import { Download, Tags as TagsIcon } from "lucide-react";
+import { Cpu, Download, Tags as TagsIcon } from "lucide-react";
 
 import {
   Tooltip,
@@ -77,17 +77,16 @@ export function ImageCard({ message, prompt }: ImageCardProps) {
           >
             <Download className="h-3.5 w-3.5" />
           </button>
-
         </div>
 
         <div className="space-y-1.5 p-3">
           {prompt ? (
             <p className="line-clamp-2 text-[12px] leading-relaxed wrap-break-word text-charcoal">
-              {prompt}
+              {prompt}1
             </p>
           ) : null}
           <div className="flex items-center gap-1.5 text-[11px] tracking-tight text-stone tabular-nums">
-            <span>{stats.join(" · ")}</span>
+            <span className="leading-none">{stats.join(" · ")}</span>
             {message.tags.length > 0 ? (
               <Tooltip>
                 <TooltipTrigger
@@ -105,6 +104,27 @@ export function ImageCard({ message, prompt }: ImageCardProps) {
                 <TooltipPositioner side="top">
                   <TooltipContent className="max-w-xs">
                     {message.tags.map((t) => t.name).join(" · ")}
+                  </TooltipContent>
+                </TooltipPositioner>
+              </Tooltip>
+            ) : null}
+            {message.model ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label={`Model: ${message.model}`}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded text-stone transition-colors duration-150 hover:text-primary focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
+                    >
+                      <Cpu className="h-3 w-3" />
+                    </button>
+                  }
+                />
+                <TooltipPositioner side="top">
+                  <TooltipContent className="max-w-xs">
+                    {message.model}
                   </TooltipContent>
                 </TooltipPositioner>
               </Tooltip>

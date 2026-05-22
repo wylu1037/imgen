@@ -12,6 +12,7 @@ import {
   Plus,
   Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,10 +29,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -41,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sidebar,
   SidebarContent,
@@ -351,41 +352,74 @@ export function WorkspaceSidebar() {
           if (!open) setRenameTarget(null);
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename conversation</DialogTitle>
-            <DialogDescription>
+        <DialogContent
+          showCloseButton={false}
+          className="w-[min(420px,calc(100vw-2rem))] max-w-none gap-0 p-5"
+        >
+          <DialogClose
+            render={
+              <button
+                type="button"
+                aria-label="Close"
+                className="absolute top-3 right-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-steel transition-colors duration-150 ease-out hover:bg-tint-gray hover:text-ink focus:ring-[3px] focus:ring-primary/15 focus:outline-none"
+              >
+                <X className="size-4" />
+              </button>
+            }
+          />
+          <div className="mb-4">
+            <DialogTitle className="text-[12px] font-semibold text-ink">
+              Rename conversation
+            </DialogTitle>
+            <DialogDescription className="mt-0.5 text-[11px] leading-4 text-steel">
               Give this conversation a name you can find later.
             </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void handleRenameSubmit();
-              }
-            }}
-            autoFocus
-            placeholder="Conversation title"
-          />
-          <DialogFooter>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor="conversation-rename"
+              className="text-[11px] font-medium tracking-wide text-steel"
+            >
+              Title
+            </Label>
+            <Input
+              id="conversation-rename"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleRenameSubmit();
+                }
+              }}
+              autoFocus
+              placeholder="Conversation title"
+              autoComplete="off"
+              className="h-8 px-3 text-[13px]! md:text-[12px]!"
+            />
+          </div>
+
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
+              size="sm"
               onClick={() => setRenameTarget(null)}
+              className="h-8 text-[12px]!"
             >
               Cancel
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={() => void handleRenameSubmit()}
               disabled={!renameValue.trim()}
+              className="h-8 text-[12px]!"
             >
               Save
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -442,13 +476,11 @@ const ConversationItem = React.memo(function ConversationItem({
         onClick={onSelect}
         isActive={isActive}
         className={cn(
-          "pr-7 text-[12px] text-charcoal",
+          "pr-7 text-[12px]! text-charcoal",
           "data-[active=true]:bg-tint-lavender data-[active=true]:text-brand-purple-800",
         )}
       >
-        <span className="truncate">
-          {conversation.title || "Untitled"}
-        </span>
+        <span className="truncate">{conversation.title || "Untitled"}</span>
       </SidebarMenuButton>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -457,7 +489,7 @@ const ConversationItem = React.memo(function ConversationItem({
             variant="ghost"
             size="icon-sm"
             aria-label={`Actions for ${conversation.title || "conversation"}`}
-            className="absolute top-0.5 right-1 size-6 text-stone opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
+            className="absolute top-1/2 right-1 size-6 -translate-y-1/2 text-stone opacity-0 transition-opacity group-hover/menu-item:opacity-100 data-[state=open]:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="size-3.5" />
