@@ -431,8 +431,10 @@ export function WorkspaceSidebar() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-[12px] font-semibold text-ink">
+              Delete conversation?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-0.5 text-[11px] leading-4 text-steel">
               This will permanently remove
               {deleteTarget?.title
                 ? ` "${deleteTarget.title}"`
@@ -441,10 +443,13 @@ export function WorkspaceSidebar() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel size="sm" className="h-8 text-[12px]!">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
+              size="sm"
               onClick={() => void handleDeleteConfirm()}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="h-8 bg-destructive text-[12px]! text-white hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
