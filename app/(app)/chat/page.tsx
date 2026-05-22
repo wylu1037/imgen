@@ -9,6 +9,7 @@ import type { NewChatMessage } from "@/lib/chat/types";
 import { useAppData } from "../_context/app-data-context";
 
 import { Composer } from "./_components/composer";
+import { ConversationOutline } from "./_components/conversation-outline";
 import { MessageList } from "./_components/message-list";
 import type { PendingTurn } from "./_components/message-bubble";
 
@@ -393,6 +394,8 @@ export default function ChatPage() {
           onScrollHandled={handleScrollHandled}
         />
       </div>
+
+      <ConversationOutline />
 
       <div className="border-hairline-soft bg-background/95 px-4 py-3 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-2xl">

@@ -77,7 +77,10 @@ export function MessageList({
   }
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
+    <div
+      ref={scrollRef}
+      className="flex-1 overflow-y-auto px-4 py-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
+    >
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
         {messages.map((message) =>
           message.role === "user" ? (

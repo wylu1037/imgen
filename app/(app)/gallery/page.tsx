@@ -5,7 +5,7 @@ import { ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Spinner } from "@/components/ui/spinner";
-import { Toggle } from "@/components/ui/toggle";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +32,15 @@ export default function GalleryPage() {
   const { status, persistent, messages } = chatHistory;
   const { activeConversationId, isFilterableActive } = conversations;
   const [selectedTag, setSelectedTag] = React.useState<string>(ALL_FILTER);
-  const [onlyCurrent, setOnlyCurrent] = React.useState(false);
+  const [showAll, setShowAll] = React.useState(false);
+  const [prevConversationId, setPrevConversationId] = React.useState(
+    activeConversationId,
+  );
+  if (prevConversationId !== activeConversationId) {
+    setPrevConversationId(activeConversationId);
+    setSelectedTag(ALL_FILTER);
+    setShowAll(false);
+  }
   const persistenceWarnedRef = React.useRef(false);
 
   React.useEffect(() => {
@@ -68,11 +76,11 @@ export default function GalleryPage() {
   }, [messages]);
 
   const conversationScoped = React.useMemo(() => {
-    if (!onlyCurrent || !activeConversationId) return items;
+    if (showAll || !isFilterableActive || !activeConversationId) return items;
     return items.filter(
       (item) => item.assistant.conversationId === activeConversationId,
     );
-  }, [items, onlyCurrent, activeConversationId]);
+  }, [items, showAll, isFilterableActive, activeConversationId]);
 
   const tagOptions = React.useMemo(() => {
     const counts = new Map<string, number>();
@@ -126,41 +134,40 @@ export default function GalleryPage() {
               Browse and filter your generated images by tag.
             </p>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Toggle
-                    pressed={onlyCurrent}
-                    onPressedChange={setOnlyCurrent}
-                    disabled={!isFilterableActive}
-                    aria-label="Filter to current conversation"
-                    className="h-7 rounded-full px-3 text-[11px]"
-                  >
-                    Current conversation only
-                  </Toggle>
-                }
-              />
-              {!isFilterableActive ? (
-                <TooltipPositioner side="top">
-                  <TooltipContent>
-                    Switch to a saved conversation to filter.
-                  </TooltipContent>
-                </TooltipPositioner>
+          {tagOptions.length > 1 || isFilterableActive ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {tagOptions.length > 1 ? (
+                <TagFilter
+                  options={tagOptions}
+                  selected={selectedTag}
+                  onSelect={setSelectedTag}
+                />
               ) : null}
-            </Tooltip>
-            {tagOptions.length > 1 ? (
-              <TagFilter
-                options={tagOptions}
-                selected={selectedTag}
-                onSelect={setSelectedTag}
-              />
-            ) : null}
-          </div>
+              {isFilterableActive ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Switch
+                        checked={showAll}
+                        onCheckedChange={setShowAll}
+                        aria-label="Show images from all conversations"
+                        className="ml-auto"
+                      />
+                    }
+                  />
+                  <TooltipPositioner side="top">
+                    <TooltipContent>
+                      Show images from all conversations
+                    </TooltipContent>
+                  </TooltipPositioner>
+                </Tooltip>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         <div className="mx-auto w-full max-w-6xl">
           {isLoading ? (
             <div className="flex h-64 items-center justify-center gap-2 text-stone">
@@ -172,7 +179,9 @@ export default function GalleryPage() {
               message={
                 items.length === 0
                   ? "No images yet. Generate some in Chat to see them here."
-                  : onlyCurrent
+                  : !showAll &&
+                      isFilterableActive &&
+                      conversationScoped.length === 0
                     ? "No images in this conversation yet."
                     : "No images match this filter."
               }

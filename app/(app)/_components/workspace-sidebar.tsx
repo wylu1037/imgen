@@ -63,7 +63,7 @@ import {
 } from "@/components/ui/tooltip";
 import { ImgenMark } from "@/app/_components/imgen-mark";
 import { cn } from "@/lib/utils";
-import { groupConversationsByTime, summarizeTurn } from "@/lib/chat/grouping";
+import { groupConversationsByTime } from "@/lib/chat/grouping";
 import type { Conversation } from "@/lib/chat/types";
 
 import { useAppData } from "../_context/app-data-context";
@@ -72,13 +72,10 @@ import { SettingsDialog } from "./settings-dialog";
 
 export function WorkspaceSidebar() {
   const {
-    chatHistory,
     providerSettings,
     conversations,
-    getSelectedTurn,
     setSelectedTurn,
   } = useAppData();
-  const { messages } = chatHistory;
   const {
     providers,
     activeProviderId,
@@ -114,18 +111,6 @@ export function WorkspaceSidebar() {
     [convList],
   );
 
-  const selectedTurnId = activeConversationId
-    ? getSelectedTurn(activeConversationId)
-    : null;
-
-  const conversationTurns = React.useMemo(() => {
-    if (!activeConversationId) return [];
-    const scoped = messages.filter(
-      (m) => m.conversationId === activeConversationId && m.role === "user",
-    );
-    return scoped.slice().reverse();
-  }, [messages, activeConversationId]);
-
   const closeOnMobile = () => {
     if (isMobile) setOpenMobile(false);
   };
@@ -143,13 +128,6 @@ export function WorkspaceSidebar() {
     ) {
       router.push("/chat");
     }
-  };
-
-  const handleSelectTurn = (turnId: string) => {
-    if (!activeConversationId) return;
-    setSelectedTurn(activeConversationId, turnId);
-    if (pathname !== "/chat") router.push("/chat");
-    closeOnMobile();
   };
 
   const handleNew = () => {
@@ -313,33 +291,7 @@ export function WorkspaceSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {conversationTurns.length > 0 ? (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-[11px] font-medium tracking-[0.12em] text-stone">
-              In this conversation
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {conversationTurns.map((turn) => (
-                  <SidebarMenuItem key={turn.id}>
-                    <SidebarMenuButton
-                      onClick={() => handleSelectTurn(turn.turnId)}
-                      isActive={selectedTurnId === turn.turnId}
-                      className={cn(
-                        "h-auto items-start py-2 text-[12px] leading-snug text-charcoal",
-                        "data-[active=true]:bg-tint-lavender data-[active=true]:text-brand-purple-800",
-                      )}
-                    >
-                      <span className="line-clamp-2 wrap-break-word whitespace-normal">
-                        {summarizeTurn(turn)}
-                      </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ) : !hasAnyConversation ? (
+        {!hasAnyConversation ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <span className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-tint-cream text-stone">
               <ImageIcon className="h-4 w-4" />
