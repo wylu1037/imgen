@@ -21,6 +21,10 @@ import { PromptMarquee } from "@/app/_components/prompt-marquee";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const githubRepoUrl = "https://github.com/wylu1037/imgen";
+const githubIssuesUrl = `${githubRepoUrl}/issues`;
+const githubDesignUrl = `${githubRepoUrl}/blob/main/DESIGN.md`;
+
 const samplePrompts = [
   "Risograph illustration of a quiet bookstore on a rainy afternoon, limited palette of coral and indigo, grainy texture",
   "Studio photograph of a ceramic pour-over coffee setup, morning light, shallow depth of field, beige linen backdrop",
@@ -109,11 +113,10 @@ export default function Home() {
           >
             Gallery
           </Link>
-          {/* TODO: replace # with real repo URL */}
           <a
-            href="#"
+            href={githubRepoUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="hidden text-sm text-steel transition-colors hover:text-ink sm:inline"
           >
             GitHub
@@ -171,11 +174,10 @@ export default function Home() {
             <Sparkles />
             Start creating
           </Link>
-          {/* TODO: replace # with real repo URL */}
           <a
-            href="#"
+            href={githubRepoUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className={buttonVariants({ variant: "outline", size: "lg" })}
           >
             <Star />
@@ -193,51 +195,66 @@ export default function Home() {
       {/* 3. Workspace Mockup — settles in 3D, lifts on hover */}
       <div
         aria-hidden="true"
-        className="reveal group mx-auto w-full max-w-5xl"
+        className="reveal group mx-auto w-full max-w-5xl sm:px-2"
         style={{ ["--reveal-delay" as string]: "440" }}
       >
-        <div className="relative transform-[perspective(1400px)_rotateX(1.4deg)_rotateY(-0.6deg)] overflow-hidden rounded-2xl border border-border bg-card shadow-mockup transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:transform-[perspective(1400px)_rotateX(0deg)_rotateY(0deg)_translateY(-6px)]">
-          {/* 3a. titlebar */}
-          <div className="flex items-center gap-2 border-b border-border bg-surface-soft px-4 py-2.5">
-            <span
-              className="animate-pulse-soft size-2.5 rounded-full bg-tint-peach"
-              style={{ animationDelay: "-0.4s" }}
-            />
-            <span
-              className="animate-pulse-soft size-2.5 rounded-full bg-tint-yellow"
-              style={{ animationDelay: "-1.2s" }}
-            />
-            <span
-              className="animate-pulse-soft size-2.5 rounded-full bg-tint-mint"
-              style={{ animationDelay: "-2s" }}
-            />
-            <span className="mx-auto font-mono text-[10px] tracking-[0.2em] text-stone uppercase">
-              conversation · risograph studies
-            </span>
-          </div>
+        <div className="relative transform-[perspective(1400px)_rotateX(1.2deg)_rotateY(-0.6deg)] rounded-4xl p-px shadow-[0_34px_80px_-28px_rgba(15,15,15,0.34)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:transform-[perspective(1400px)_rotateX(0deg)_rotateY(0deg)_translateY(-6px)]">
+          <div className="pointer-events-none absolute -inset-x-8 -top-10 -bottom-8 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_25%_0%,rgba(214,182,246,0.52),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(255,232,212,0.6),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.65),rgba(250,250,249,0))] blur-2xl" />
+          <div className="relative isolate overflow-hidden rounded-[calc(2rem-1px)] border border-hairline-soft bg-card/92 shadow-mockup backdrop-blur">
+            <span className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+            <span className="pointer-events-none absolute -top-28 left-10 h-52 w-52 rounded-full bg-tint-lavender/55 blur-3xl" />
+            <span className="pointer-events-none absolute -right-20 top-32 h-48 w-48 rounded-full bg-tint-peach/50 blur-3xl" />
 
-          {/* 3b. conversation */}
-          <div className="space-y-4 bg-card px-5 py-6 sm:px-8 sm:py-8">
-            <MockupUserBubble text={samplePrompts[0]} />
-            <MockupAssistantCard />
-          </div>
-
-          {/* 3c. composer */}
-          <div className="border-t border-border bg-surface-soft p-4 sm:p-5">
-            <div className="mb-2.5 flex flex-wrap gap-1.5">
-              <MockupChip>openai</MockupChip>
-              <MockupChip>gpt-image-2</MockupChip>
-              <MockupChip>square</MockupChip>
-              <MockupChip>auto</MockupChip>
+            <div className="relative z-10 flex items-center gap-3 border-b border-hairline-soft bg-surface-soft/80 px-4 py-3 backdrop-blur sm:px-5">
+              <div className="flex items-center gap-2">
+                <span
+                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-peach"
+                  style={{ animationDelay: "-0.4s" }}
+                />
+                <span
+                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-yellow"
+                  style={{ animationDelay: "-1.2s" }}
+                />
+                <span
+                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-mint"
+                  style={{ animationDelay: "-2s" }}
+                />
+              </div>
+              <span className="min-w-0 flex-1 text-center font-mono text-[10px] tracking-[0.2em] text-stone uppercase">
+                Conversation · Risograph studies
+              </span>
+              <span className="hidden rounded-full border border-hairline-soft bg-card/70 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-steel uppercase shadow-subtle sm:inline-flex">
+                OPFS ready
+              </span>
             </div>
-            <div className="relative flex items-end gap-2 rounded-2xl border border-hairline-strong bg-card p-3 shadow-[0_10px_30px_-12px_rgba(15,15,15,0.12),0_2px_6px_-2px_rgba(15,15,15,0.04)]">
-              <span className="flex flex-1 items-center font-serif text-[13px] text-stone italic">
-                Describe the image you want to generate
-                <span className="animate-type-caret ml-1 inline-block h-3.5 w-px translate-y-px bg-primary align-middle" />
-              </span>
-              <span className="animate-halo-pulse inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-cta">
-                <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
-              </span>
+
+            <div className="relative z-10 overflow-hidden bg-card/70 px-4 py-6 sm:px-8 sm:py-9 lg:px-10">
+              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
+              <span className="pointer-events-none absolute bottom-6 left-8 h-32 w-32 rounded-full bg-tint-mint/35 blur-3xl" />
+              <div className="relative space-y-6">
+                <MockupUserBubble text={samplePrompts[0]} />
+                <MockupAssistantCard />
+              </div>
+            </div>
+
+            <div className="relative z-10 border-t border-hairline-soft bg-surface-soft/75 p-4 backdrop-blur sm:p-5 lg:p-6">
+              <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+              <div className="mb-3 flex flex-wrap gap-2">
+                <MockupChip>openai</MockupChip>
+                <MockupChip>gpt-image-2</MockupChip>
+                <MockupChip>square</MockupChip>
+                <MockupChip>auto</MockupChip>
+              </div>
+              <div className="relative flex min-h-16 items-end gap-3 rounded-[1.35rem] border border-hairline-strong bg-card/95 p-3.5 shadow-[0_18px_42px_-24px_rgba(15,15,15,0.26),0_2px_8px_-4px_rgba(15,15,15,0.08),inset_0_1px_0_rgba(255,255,255,0.72)]">
+                <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+                <span className="flex flex-1 items-center font-serif text-[13px] leading-relaxed text-stone italic">
+                  Describe the image you want to generate
+                  <span className="animate-type-caret ml-1 inline-block h-3.5 w-px translate-y-px bg-primary align-middle" />
+                </span>
+                <span className="animate-halo-pulse inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-cta">
+                  <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -424,50 +441,62 @@ function Eyebrow({
 
 function MockupChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex h-6 items-center gap-1 rounded-md border border-hairline-soft bg-card px-2 text-[10px] font-medium text-charcoal shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-hairline-soft bg-card/75 px-3 text-[10px] font-semibold tracking-[0.04em] text-charcoal shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-sm">
       {children}
-      <ChevronDown className="size-3 text-stone" />
+      <ChevronDown className="size-3 text-stone" strokeWidth={1.8} />
     </span>
   );
 }
 
 function MockupUserBubble({ text }: { text: string }) {
   return (
-    <div className="flex items-start justify-end gap-2">
-      <div className="max-w-[85%] rounded-lg bg-tint-lavender px-3.5 py-2.5 text-[14px] leading-relaxed text-brand-purple-800 sm:max-w-[70%]">
+    <div className="flex items-start justify-end gap-3">
+      <div className="max-w-[86%] rounded-[1.15rem] rounded-tr-md border border-white/65 bg-tint-lavender/78 px-4 py-3 text-[14px] leading-relaxed text-brand-purple-800 shadow-[0_12px_30px_-22px_rgba(57,28,87,0.42),inset_0_1px_0_rgba(255,255,255,0.72)] sm:max-w-[68%]">
         {text}
       </div>
-      <span className="h-7 w-7 shrink-0 rounded-full bg-tint-peach" />
+      <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/80 bg-linear-to-br from-tint-peach via-tint-yellow to-tint-lavender shadow-subtle">
+        <span className="absolute left-1.5 top-1.5 h-2 w-2 rounded-full bg-white/70" />
+        <span className="absolute inset-x-1 bottom-1 h-2 rounded-full bg-white/28 blur-sm" />
+      </span>
     </div>
   );
 }
 
 function MockupAssistantCard() {
   return (
-    <div className="flex items-start gap-2">
-      <ImgenMarkBadge className="h-7 w-7" />
-      <div className="max-w-[85%] rounded-lg border border-border bg-card p-3 shadow-subtle sm:max-w-[70%]">
-        <div className="animate-gradient-pan relative aspect-square w-56 overflow-hidden rounded-md bg-linear-to-br from-[#e98a7a] via-brand-purple-300 to-brand-navy-mid sm:w-80">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.45),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_80%,rgba(255,255,255,0.16),transparent_55%)]" />
+    <div className="flex items-start gap-3">
+      <ImgenMarkBadge className="h-8 w-8 shrink-0 shadow-subtle" />
+      <div className="max-w-[88%] rounded-[1.35rem] rounded-tl-md border border-hairline-soft bg-card/90 p-3.5 shadow-[0_22px_52px_-34px_rgba(15,15,15,0.34),inset_0_1px_0_rgba(255,255,255,0.76)] backdrop-blur sm:max-w-[72%] sm:p-4">
+        <div className="animate-gradient-pan relative aspect-square w-full max-w-72 overflow-hidden rounded-xl border border-white/55 bg-linear-to-br from-[#d97463] via-brand-purple-300 to-brand-navy-mid shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_18px_36px_-28px_rgba(10,21,48,0.45)] sm:max-w-80">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.5),transparent_46%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_78%,rgba(255,255,255,0.18),transparent_52%)]" />
+          <div className="absolute left-4 top-4 rounded-full border border-white/35 bg-white/18 px-2.5 py-1 font-mono text-[9px] tracking-[0.16em] text-white/78 uppercase backdrop-blur-sm">
+            render 04
+          </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <Sparkles
-              className="animate-float-soft h-7 w-7 text-white/80"
+              className="animate-float-soft h-8 w-8 text-white/82 drop-shadow-sm"
               strokeWidth={1.5}
             />
           </div>
+          <div className="absolute inset-x-4 bottom-4 h-px bg-linear-to-r from-transparent via-white/48 to-transparent" />
         </div>
-        <p className="mt-2 text-[11px] text-stone">
-          gpt-image-2 · 1024×1024 · medium
-        </p>
-        <p className="mt-1 hidden text-[11px] text-stone tabular-nums sm:block">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-stone">
+          <span className="rounded-full bg-surface-soft px-2.5 py-1 font-mono text-[10px] tracking-[0.08em] text-charcoal">
+            gpt-image-2
+          </span>
+          <span>1024×1024</span>
+          <span className="text-hairline-strong">/</span>
+          <span>medium</span>
+        </div>
+        <p className="mt-2 hidden text-[11px] text-stone tabular-nums sm:block">
           2:14 PM · 412 KB · Elapsed 6.2s
         </p>
-        <div className="mt-2 flex gap-1.5">
-          <span className="rounded-sm bg-tint-lavender px-1.5 py-0.5 text-[10px] font-semibold text-brand-purple-800">
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-tint-lavender px-2.5 py-1 text-[10px] font-semibold text-brand-purple-800">
             riso
           </span>
-          <span className="rounded-sm bg-tint-lavender px-1.5 py-0.5 text-[10px] font-semibold text-brand-purple-800">
+          <span className="rounded-full bg-tint-peach px-2.5 py-1 text-[10px] font-semibold text-brand-orange-deep">
             bookstore
           </span>
         </div>
@@ -599,14 +628,28 @@ function LandingFooter() {
         <span>Imgen · open source · MIT</span>
       </div>
       <div className="flex items-center gap-5">
-        {/* TODO: replace # with real repo URL */}
-        <a href="#" className="text-steel transition-colors hover:text-ink">
+        <a
+          href={githubRepoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-steel transition-colors hover:text-ink"
+        >
           GitHub
         </a>
-        <a href="#" className="text-steel transition-colors hover:text-ink">
+        <a
+          href={githubIssuesUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-steel transition-colors hover:text-ink"
+        >
           Issues
         </a>
-        <a href="#" className="text-steel transition-colors hover:text-ink">
+        <a
+          href={githubDesignUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-steel transition-colors hover:text-ink"
+        >
           DESIGN.md
         </a>
       </div>

@@ -22,13 +22,13 @@ export function PromptMarquee({
     <div
       className={cn(
         "group relative overflow-hidden",
-        "[mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]",
+        "mask-[linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]",
         "[-webkit-mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]",
         className,
       )}
     >
       <div
-        className="animate-marquee-slide flex w-max gap-3 group-hover:[animation-play-state:paused]"
+        className="animate-marquee-slide flex w-max gap-3 group-hover:paused"
         style={{ ["--marquee-duration" as string]: `${speed}s` }}
       >
         {doubled.map((prompt, i) => {
@@ -36,7 +36,7 @@ export function PromptMarquee({
           return (
             <article
               key={`${i}-${prompt}`}
-              className="flex w-[22rem] shrink-0 flex-col gap-1.5 rounded-xl border border-hairline-soft bg-card/85 px-4 py-3 shadow-subtle backdrop-blur-sm transition-shadow duration-500 hover:shadow-[0_18px_40px_-22px_rgba(15,15,15,0.18)]"
+              className="flex w-88 shrink-0 flex-col gap-1.5 rounded-xl border border-hairline-soft bg-card/85 px-4 py-3 shadow-subtle backdrop-blur-sm transition-shadow duration-500 hover:shadow-[0_18px_40px_-22px_rgba(15,15,15,0.18)]"
             >
               <span className="font-mono text-[10px] tracking-[0.18em] text-stone uppercase">
                 prompt · {String(localIndex).padStart(2, "0")}
