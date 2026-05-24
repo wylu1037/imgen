@@ -14,13 +14,20 @@ import {
   Tags,
 } from "lucide-react";
 
+import { AuroraBackdrop } from "@/app/_components/aurora-backdrop";
 import { ImgenMarkBadge } from "@/app/_components/imgen-mark";
+import { LiveCounter } from "@/app/_components/live-counter";
+import { PromptMarquee } from "@/app/_components/prompt-marquee";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const samplePrompts = [
   "Risograph illustration of a quiet bookstore on a rainy afternoon, limited palette of coral and indigo, grainy texture",
   "Studio photograph of a ceramic pour-over coffee setup, morning light, shallow depth of field, beige linen backdrop",
   "Misty alpine valley at golden hour, layered ridgelines, cinematic wide shot, low contrast, painterly atmosphere",
+  "Editorial portrait by a north-facing window, 35mm film grain, mid-century interior, muted teal and brick palette",
+  "Topographic blueprint of an imagined coastal town, hand-drawn linework, sepia ink on cream paper",
+  "Cyanotype-style botanical print of fern fronds, deep indigo on bright white, soft paper texture",
 ] as const;
 
 const featureToneMap = {
@@ -118,10 +125,14 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* 2. Hero */}
-      <section className="grid gap-6 pt-10 pb-12 text-center sm:pt-16 lg:pt-20">
+      {/* 2. Hero — antimetal-style top aurora hangs off the top edge and
+           bleeds into the mockup below; reveal stagger drives the first paint */}
+      <section className="relative isolate grid gap-6 pt-10 pb-12 text-center sm:pt-16 lg:pt-20">
+        <div className="pointer-events-none absolute -top-32 right-[calc(50%-50vw)] bottom-[-15%] left-[calc(50%-50vw)] -z-10 overflow-hidden">
+          <AuroraBackdrop tone="light" />
+        </div>
         <div
-          className="reveal text-micro-uppercase mx-auto inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-steel shadow-subtle"
+          className="reveal text-micro-uppercase mx-auto inline-flex items-center gap-2 rounded-full border border-border bg-card/85 px-3 py-1.5 text-steel shadow-subtle backdrop-blur"
           style={{ ["--reveal-delay" as string]: "60" }}
         >
           <span className="relative flex h-1.5 w-1.5">
@@ -179,13 +190,13 @@ export default function Home() {
         </p>
       </section>
 
-      {/* 3. Workspace Mockup */}
+      {/* 3. Workspace Mockup — settles in 3D, lifts on hover */}
       <div
         aria-hidden="true"
-        className="reveal mx-auto w-full max-w-5xl"
+        className="reveal group mx-auto w-full max-w-5xl"
         style={{ ["--reveal-delay" as string]: "440" }}
       >
-        <div className="shadow-mockup relative overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="relative transform-[perspective(1400px)_rotateX(1.4deg)_rotateY(-0.6deg)] overflow-hidden rounded-2xl border border-border bg-card shadow-mockup transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:transform-[perspective(1400px)_rotateX(0deg)_rotateY(0deg)_translateY(-6px)]">
           {/* 3a. titlebar */}
           <div className="flex items-center gap-2 border-b border-border bg-surface-soft px-4 py-2.5">
             <span
@@ -220,10 +231,11 @@ export default function Home() {
               <MockupChip>auto</MockupChip>
             </div>
             <div className="relative flex items-end gap-2 rounded-2xl border border-hairline-strong bg-card p-3 shadow-[0_10px_30px_-12px_rgba(15,15,15,0.12),0_2px_6px_-2px_rgba(15,15,15,0.04)]">
-              <span className="flex-1 font-serif text-[13px] text-stone italic">
-                Describe the image you want to generate…
+              <span className="flex flex-1 items-center font-serif text-[13px] text-stone italic">
+                Describe the image you want to generate
+                <span className="animate-type-caret ml-1 inline-block h-3.5 w-px translate-y-px bg-primary align-middle" />
               </span>
-              <span className="shadow-cta animate-halo-pulse inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white">
+              <span className="animate-halo-pulse inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-cta">
                 <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
               </span>
             </div>
@@ -231,7 +243,34 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 4. BYOK band */}
+      {/* 4. Stat band — live counters animate when scrolled into view.
+           the three numbers are the contract reduced to a single glance. */}
+      <section className="reveal-on-scroll mt-20 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatTile
+          mono="bytes uploaded"
+          icon={Lock}
+          value={0}
+          suffix=""
+          caption="to any server we own. ever."
+        />
+        <StatTile
+          mono="local generations"
+          icon={Database}
+          value={100}
+          suffix="%"
+          caption="stored in your browser's OPFS."
+          highlight
+        />
+        <StatTile
+          mono="api key"
+          icon={KeyRound}
+          value={1}
+          suffix=""
+          caption="yours. never proxied, never logged."
+        />
+      </section>
+
+      {/* 5. BYOK band */}
       <section className="reveal-on-scroll mt-20 grid gap-6 rounded-2xl bg-tint-yellow-bold p-8 sm:p-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:p-12">
         <div>
           <Eyebrow icon={KeyRound} phase={-0.6}>
@@ -301,7 +340,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. Sample prompts strip */}
+      {/* 7. Sample prompts — horizontal marquee drift, pauses on hover */}
       <section className="mt-24">
         <div className="text-center">
           <Eyebrow phase={-2}>Built for</Eyebrow>
@@ -310,47 +349,44 @@ export default function Home() {
             <span className="font-serif text-primary italic">photos.</span>
           </h2>
         </div>
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {samplePrompts.map((prompt, idx) => (
-            <PromptStrip
-              key={prompt}
-              index={String(idx + 1).padStart(2, "0")}
-              prompt={prompt}
-            />
-          ))}
+        <div className="reveal-on-scroll mt-10">
+          <PromptMarquee items={samplePrompts} speed={56} />
         </div>
       </section>
 
-      {/* 8. Final CTA */}
-      <section className="reveal-on-scroll mt-24 rounded-2xl bg-brand-navy p-10 text-center sm:p-16 lg:p-20">
-        <span className="inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.2em] text-tint-lavender uppercase">
-          <span className="relative flex h-1.5 w-1.5">
-            <span
-              className="animate-pulse-soft absolute inline-flex h-full w-full rounded-full bg-white opacity-70"
-              style={{ animationDelay: "-1.6s" }}
-            />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+      {/* 8. Final CTA — antimetal-style deep aurora halo over brand-navy */}
+      <section className="reveal-on-scroll relative isolate mt-24 overflow-hidden rounded-2xl bg-brand-navy p-10 text-center sm:p-16 lg:p-20">
+        <AuroraBackdrop tone="deep" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.2em] text-tint-lavender uppercase">
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className="animate-pulse-soft absolute inline-flex h-full w-full rounded-full bg-white opacity-70"
+                style={{ animationDelay: "-1.6s" }}
+              />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+            </span>
+            ready when you are
           </span>
-          ready when you are
-        </span>
-        <h2 className="text-display mt-4 text-white">
-          Open the workspace.
-          <br />
-          <span className="font-serif text-tint-lavender italic">
-            Bring your own key.
-          </span>
-        </h2>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/chat" className={buttonVariants({ size: "lg" })}>
-            <Sparkles />
-            Start creating
-          </Link>
-          <Link
-            href="/gallery"
-            className={buttonVariants({ variant: "onDark", size: "lg" })}
-          >
-            Browse gallery
-          </Link>
+          <h2 className="text-display mt-4 text-white">
+            Open the workspace.
+            <br />
+            <span className="font-serif text-tint-lavender italic">
+              Bring your own key.
+            </span>
+          </h2>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/chat" className={buttonVariants({ size: "lg" })}>
+              <Sparkles />
+              Start creating
+            </Link>
+            <Link
+              href="/gallery"
+              className={buttonVariants({ variant: "onDark", size: "lg" })}
+            >
+              Browse gallery
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -410,7 +446,7 @@ function MockupAssistantCard() {
   return (
     <div className="flex items-start gap-2">
       <ImgenMarkBadge className="h-7 w-7" />
-      <div className="shadow-subtle max-w-[85%] rounded-lg border border-border bg-card p-3 sm:max-w-[70%]">
+      <div className="max-w-[85%] rounded-lg border border-border bg-card p-3 shadow-subtle sm:max-w-[70%]">
         <div className="animate-gradient-pan relative aspect-square w-56 overflow-hidden rounded-md bg-linear-to-br from-[#e98a7a] via-brand-purple-300 to-brand-navy-mid sm:w-80">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.45),transparent_55%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_80%,rgba(255,255,255,0.16),transparent_55%)]" />
@@ -497,7 +533,7 @@ function StepCard({
   body: string;
 }) {
   return (
-    <div className="reveal-on-scroll shadow-subtle rounded-lg border border-border bg-card p-6 transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_rgba(15,15,15,0.18)]">
+    <div className="reveal-on-scroll rounded-lg border border-border bg-card p-6 shadow-subtle transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_rgba(15,15,15,0.18)]">
       <span className="font-mono text-[11px] tracking-[0.2em] text-primary uppercase">
         Step · {index}
       </span>
@@ -507,15 +543,50 @@ function StepCard({
   );
 }
 
-function PromptStrip({ index, prompt }: { index: string; prompt: string }) {
+function StatTile({
+  mono,
+  icon: Icon,
+  value,
+  suffix,
+  caption,
+  highlight,
+}: {
+  mono: string;
+  icon: LucideIcon;
+  value: number;
+  suffix?: string;
+  caption: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className="reveal-on-scroll rounded-xl border border-hairline-soft bg-surface-soft p-5 transition-colors duration-500 hover:bg-card">
-      <span className="font-mono text-[10px] tracking-[0.18em] text-stone uppercase">
-        Prompt · {index}
-      </span>
-      <p className="mt-2 font-serif text-[14px] leading-relaxed text-charcoal italic">
-        {prompt}
-      </p>
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-xl border border-hairline-soft p-6 shadow-subtle transition-shadow duration-500 hover:shadow-[0_18px_40px_-22px_rgba(15,15,15,0.18)]",
+        highlight ? "bg-tint-yellow-bold/40" : "bg-card",
+      )}
+    >
+      <span
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        aria-hidden
+      />
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] tracking-[0.2em] text-stone uppercase">
+          {mono}
+        </span>
+        <Icon className="h-3.5 w-3.5 text-charcoal/40" />
+      </div>
+      <div
+        className={cn(
+          "mt-3 flex items-baseline gap-0.5 text-[44px] leading-none font-semibold tracking-tight",
+          highlight ? "text-primary" : "text-ink",
+        )}
+      >
+        <LiveCounter to={value} duration={1.6} />
+        {suffix ? (
+          <span className="text-[28px] text-stone">{suffix}</span>
+        ) : null}
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-slate">{caption}</p>
     </div>
   );
 }

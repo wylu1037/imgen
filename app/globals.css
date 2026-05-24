@@ -165,6 +165,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   font-feature-settings: "cv11", "ss01", "ss03";
+  overflow-x: clip;
 }
 
 /* Notion-style typography utilities */
@@ -349,6 +350,92 @@ body {
   animation: dash-flow 1.2s linear infinite;
 }
 
+/* aurora-pan — slow background-position drift for the multi-stop radial
+ * gradients used in AuroraBackdrop. backgroundSize is 140% so the eye reads
+ * the motion without the edges going transparent. paired with a tiny hue
+ * shift so the glow feels alive across the cycle. */
+@keyframes aurora-pan {
+  0%,
+  100% {
+    background-position: 50% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 56% 46%;
+    filter: hue-rotate(8deg);
+  }
+}
+.animate-aurora-pan {
+  animation: aurora-pan 16s ease-in-out infinite;
+}
+
+/* scan-sweep — a single hairline that travels top→bottom every ~9s. evokes
+ * antimetal's terminal/oscilloscope micro-detail without being noisy. */
+@keyframes scan-sweep {
+  0% {
+    top: -2%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 102%;
+    opacity: 0;
+  }
+}
+.animate-scan-sweep {
+  animation: scan-sweep 9s linear infinite;
+}
+
+/* marquee-slide — drives PromptMarquee. duplicates content + slides by 50%
+ * for seamless loop. duration controlled via the --marquee-duration var. */
+@keyframes marquee-slide {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.animate-marquee-slide {
+  animation: marquee-slide var(--marquee-duration, 40s) linear infinite;
+}
+
+/* tilt-rest — used on the mockup wrapper. gently rocks the card; on hover
+ * the inner translate cancels it out so the card snaps level. ≤2deg tilt. */
+@keyframes tilt-rest {
+  0%,
+  100% {
+    transform: perspective(1400px) rotateX(2deg) rotateY(-1.2deg);
+  }
+  50% {
+    transform: perspective(1400px) rotateX(1deg) rotateY(0.6deg);
+  }
+}
+.animate-tilt-rest {
+  animation: tilt-rest 14s ease-in-out infinite;
+}
+
+/* type-caret — blinking caret after the "Describe the image…" placeholder in
+ * the mockup composer. mirrors a real text input focus. */
+@keyframes type-caret {
+  0%,
+  60% {
+    opacity: 1;
+  }
+  61%,
+  100% {
+    opacity: 0;
+  }
+}
+.animate-type-caret {
+  animation: type-caret 1.05s steps(2, jump-none) infinite;
+}
+
 /* scroll-driven reveal — zero-JS counterpart to .reveal.
  * works on Chromium 115+ and Safari 17.4+; gracefully degrades to "visible
  * with no animation" on older browsers (which is the reduce-motion state
@@ -371,6 +458,11 @@ body {
   .animate-gradient-pan,
   .animate-halo-pulse,
   .animate-dash-flow,
+  .animate-aurora-pan,
+  .animate-scan-sweep,
+  .animate-marquee-slide,
+  .animate-tilt-rest,
+  .animate-type-caret,
   .reveal,
   .reveal-on-scroll {
     animation: none !important;
