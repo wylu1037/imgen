@@ -4,11 +4,14 @@ import {
   ArrowUp,
   ChevronDown,
   Database,
+  GitBranch,
   KeyRound,
+  Layers3,
   Lock,
   type LucideIcon,
-  MessagesSquare,
-  Sliders,
+  Palette,
+  Route,
+  ShieldCheck,
   Sparkles,
   Star,
   Tags,
@@ -26,12 +29,12 @@ const githubIssuesUrl = `${githubRepoUrl}/issues`;
 const githubDesignUrl = `${githubRepoUrl}/blob/main/DESIGN.md`;
 
 const samplePrompts = [
-  "Risograph illustration of a quiet bookstore on a rainy afternoon, limited palette of coral and indigo, grainy texture",
-  "Studio photograph of a ceramic pour-over coffee setup, morning light, shallow depth of field, beige linen backdrop",
-  "Misty alpine valley at golden hour, layered ridgelines, cinematic wide shot, low contrast, painterly atmosphere",
-  "Editorial portrait by a north-facing window, 35mm film grain, mid-century interior, muted teal and brick palette",
-  "Topographic blueprint of an imagined coastal town, hand-drawn linework, sepia ink on cream paper",
-  "Cyanotype-style botanical print of fern fronds, deep indigo on bright white, soft paper texture",
+  "Editorial image system for a rainy bookstore launch, risograph texture, coral ink, indigo shadows, quiet shelves",
+  "Ceramic coffee ritual product study, north-window light, soft linen backdrop, muted sand palette, shallow focus",
+  "Alpine travel poster series at golden hour, layered ridgelines, cinematic crop, low-contrast painterly atmosphere",
+  "Founder portrait in a mid-century studio, 35mm film grain, teal wall, brick textile, restrained editorial lighting",
+  "Coastal town map as a design artifact, topographic linework, sepia ink, cream stock, labeled neighborhoods",
+  "Cyanotype botanical archive for a gallery wall, fern fronds, deep indigo wash, bright paper grain, quiet margin",
 ] as const;
 
 const featureToneMap = {
@@ -49,45 +52,51 @@ const features: ReadonlyArray<{
 }> = [
   {
     tone: "lavender",
-    icon: MessagesSquare,
-    title: "Chat-shaped canvas",
-    body: "Each prompt produces an independent image. Threads keep iteration visible — no destructive edits, no lost variants.",
+    icon: Palette,
+    title: "Design brief workspace",
+    body: "Prompts read like reusable creative briefs. Keep provider, model, size, quality, tags, and output together as one artifact.",
   },
   {
     tone: "peach",
     icon: Database,
-    title: "SQLite in the browser",
-    body: "WASM + OPFS. Your full history is queryable, exportable, and survives offline. No row ever touches a server we own.",
+    title: "Local artifact library",
+    body: "SQLite WASM + OPFS keeps prompt history, images, tags, and conversations in the browser for browsing and export.",
   },
   {
     tone: "mint",
-    icon: Sliders,
-    title: "Per-prompt parameters",
-    body: "Provider, model, size, quality — adjust above the composer for every image. No global mode switching.",
+    icon: Route,
+    title: "BYOK provider routing",
+    body: "Use OpenAI-compatible providers with per-request controls. Requests pass through /api/generate only when you generate.",
   },
   {
     tone: "sky",
     icon: Tags,
-    title: "Tags & a real gallery",
-    body: "Mark favorites, filter by tag, jump back to any image. Built for browsing, not just scrolling chat history.",
+    title: "Gallery curation",
+    body: "Favorite, tag, filter, and return to source prompts. Treat generations as a working image system, not a throwaway chat.",
   },
 ];
+
+const trustNotes = [
+  { icon: ShieldCheck, label: "No server-side persistence" },
+  { icon: GitBranch, label: "Open-source workflow" },
+  { icon: Layers3, label: "Artifact-first gallery" },
+] as const;
 
 const steps = [
   {
     index: "01",
-    title: "Drop in a key.",
-    body: "Open Settings, paste an OpenAI-compatible key, set the base URL if you're on Azure or self-hosted. We persist it to localStorage only.",
+    title: "Connect a provider.",
+    body: "Add an OpenAI-compatible key and optional base URL. Settings stay in browser storage or OPFS, then ride along only for generation requests.",
   },
   {
     index: "02",
-    title: "Pick your params.",
-    body: "Choose model, size, quality on a per-prompt basis. Defaults sync from your last successful generation.",
+    title: "Compose the brief.",
+    body: "Choose model, size, and quality beside the prompt so every image keeps its own exact production context.",
   },
   {
     index: "03",
-    title: "Generate. Iterate.",
-    body: "Hit ↑ to send. Every image lands in your local gallery with full prompt history and zero round-trips back to our servers.",
+    title: "Curate artifacts.",
+    body: "Each result lands in your local gallery with tags, favorites, metadata, and a path back to the original conversation.",
   },
 ] as const;
 
@@ -99,11 +108,19 @@ export default function Home() {
         className="reveal flex items-center justify-between py-2"
         style={{ ["--reveal-delay" as string]: "40" }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="relative flex items-center gap-2.5">
           <ImgenMarkBadge />
-          <span className="font-semibold tracking-tight text-ink">imgen</span>
-          <span className="font-mono text-[10px] tracking-[0.18em] text-stone uppercase">
-            alpha
+          <span className="inline-flex items-start gap-0.5">
+            <span className="font-serif text-[21px] leading-none font-normal tracking-[-0.055em] text-ink italic">
+              imgen
+            </span>
+            <span
+              aria-label="alpha"
+              title="alpha"
+              className="-mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-hairline-soft bg-surface-soft font-mono text-[10px] text-stone shadow-subtle"
+            >
+              α
+            </span>
           </span>
         </div>
         <nav className="flex items-center gap-5">
@@ -128,183 +145,198 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* 2. Hero — antimetal-style top aurora hangs off the top edge and
-           bleeds into the mockup below; reveal stagger drives the first paint */}
-      <section className="relative isolate grid gap-6 pt-10 pb-12 text-center sm:pt-16 lg:pt-20">
-        <div className="pointer-events-none absolute -top-32 right-[calc(50%-50vw)] bottom-[-15%] left-[calc(50%-50vw)] -z-10 overflow-hidden">
+      {/* 2. Hero */}
+      <section className="relative isolate grid gap-10 pt-10 pb-14 sm:pt-16 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-12 lg:pt-20">
+        <div className="pointer-events-none absolute -top-32 right-[calc(50%-50vw)] bottom-[-18%] left-[calc(50%-50vw)] -z-10 overflow-hidden">
           <AuroraBackdrop tone="light" />
         </div>
-        <div
-          className="reveal text-micro-uppercase mx-auto inline-flex items-center gap-2 rounded-full border border-border bg-card/85 px-3 py-1.5 text-steel shadow-subtle backdrop-blur"
-          style={{ ["--reveal-delay" as string]: "60" }}
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span
-              className="animate-pulse-soft absolute inline-flex h-full w-full rounded-full bg-primary opacity-70"
-              style={{ animationDelay: "-0.8s" }}
-            />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-          </span>
-          <Sparkles className="animate-float-soft h-3 w-3 text-primary" />
-          Browser-first · BYOK
-        </div>
-        <h1
-          className="reveal text-hero text-ink"
-          style={{ ["--reveal-delay" as string]: "160" }}
-        >
-          The AI image workspace that{" "}
-          <span className="font-serif font-normal text-primary italic">
-            stays
-          </span>{" "}
-          on your device<span className="text-primary">.</span>
-        </h1>
-        <p
-          className="reveal text-subtitle mx-auto mt-2 max-w-2xl text-slate"
-          style={{ ["--reveal-delay" as string]: "260" }}
-        >
-          Bring your own provider key. Generate images in a focused chat. Every
-          prompt, image, and tag is stored locally — your key never leaves the
-          browser except to call the model.
-        </p>
-        <div
-          className="reveal mt-6 flex flex-wrap items-center justify-center gap-3"
-          style={{ ["--reveal-delay" as string]: "320" }}
-        >
-          <Link href="/chat" className={buttonVariants({ size: "lg" })}>
-            <Sparkles />
-            Start creating
-          </Link>
-          <a
-            href={githubRepoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonVariants({ variant: "outline", size: "lg" })}
+
+        <div className="relative text-left">
+          <div
+            className="reveal text-micro-uppercase inline-flex items-center gap-2 rounded-full border border-border bg-card/85 px-3 py-1.5 text-steel shadow-subtle backdrop-blur"
+            style={{ ["--reveal-delay" as string]: "60" }}
           >
-            <Star />
-            Star on GitHub
-          </a>
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className="animate-pulse-soft absolute inline-flex h-full w-full rounded-full bg-primary opacity-70"
+                style={{ animationDelay: "-0.8s" }}
+              />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+            </span>
+            <Sparkles className="animate-float-soft h-3 w-3 text-primary" />
+            Open-source image workbench
+          </div>
+          <h1
+            className="reveal text-hero mt-6 max-w-3xl text-ink"
+            style={{ ["--reveal-delay" as string]: "160" }}
+          >
+            Design images like a{" "}
+            <span className="font-serif font-normal text-primary italic">
+              system
+            </span>
+            , not a slot machine<span className="text-primary">.</span>
+          </h1>
+          <p
+            className="reveal text-subtitle mt-5 max-w-2xl text-slate"
+            style={{ ["--reveal-delay" as string]: "260" }}
+          >
+            Imgen turns prompts into local design artifacts: provider settings,
+            model parameters, generated images, tags, and conversations stay
+            tied together in a browser-first workspace.
+          </p>
+          <div
+            className="reveal mt-7 flex flex-wrap items-center gap-3"
+            style={{ ["--reveal-delay" as string]: "320" }}
+          >
+            <Link href="/chat" className={buttonVariants({ size: "lg" })}>
+              <Sparkles />
+              Open workbench
+            </Link>
+            <a
+              href={githubRepoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline", size: "lg" })}
+            >
+              <Star />
+              Star on GitHub
+            </a>
+          </div>
+          <div
+            className="reveal mt-6 grid gap-2 sm:grid-cols-3 lg:max-w-2xl"
+            style={{ ["--reveal-delay" as string]: "380" }}
+          >
+            {trustNotes.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-2 rounded-lg border border-hairline-soft bg-card/75 px-3 py-2 font-mono text-[10px] tracking-[0.14em] text-charcoal/70 uppercase shadow-subtle backdrop-blur"
+              >
+                <Icon className="h-3.5 w-3.5 text-primary" />
+                {label}
+              </span>
+            ))}
+          </div>
+          <p
+            className="reveal mt-4 max-w-xl text-[12px] leading-relaxed text-stone"
+            style={{ ["--reveal-delay" as string]: "430" }}
+          >
+            Provider credentials live in browser storage or OPFS and are sent
+            through /api/generate only when you request a generation. Imgen does
+            not persist them on a server.
+          </p>
         </div>
-        <p
-          className="reveal mt-4 font-mono text-[10.5px] tracking-[0.2em] text-stone uppercase"
-          style={{ ["--reveal-delay" as string]: "380" }}
+
+        <div
+          aria-hidden="true"
+          className="reveal group w-full min-w-0 lg:translate-x-4"
+          style={{ ["--reveal-delay" as string]: "440" }}
         >
-          no signup · no telemetry · your key, your storage
-        </p>
-      </section>
+          <div className="relative transform-[perspective(1400px)_rotateX(1.2deg)_rotateY(-0.6deg)] rounded-4xl p-px shadow-[0_34px_80px_-28px_rgba(15,15,15,0.34)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:transform-[perspective(1400px)_rotateX(0deg)_rotateY(0deg)_translateY(-6px)]">
+            <div className="pointer-events-none absolute -inset-x-8 -top-10 -bottom-8 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_25%_0%,rgba(214,182,246,0.4),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(255,232,212,0.55),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.65),rgba(250,250,249,0))] blur-2xl" />
+            <div className="relative isolate overflow-hidden rounded-[calc(2rem-1px)] border border-hairline-soft bg-card/92 shadow-mockup backdrop-blur">
+              <span className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+              <span className="pointer-events-none absolute -top-28 left-10 h-52 w-52 rounded-full bg-tint-lavender/45 blur-3xl" />
+              <span className="pointer-events-none absolute top-32 -right-20 h-48 w-48 rounded-full bg-tint-peach/45 blur-3xl" />
 
-      {/* 3. Workspace Mockup — settles in 3D, lifts on hover */}
-      <div
-        aria-hidden="true"
-        className="reveal group mx-auto w-full max-w-5xl sm:px-2"
-        style={{ ["--reveal-delay" as string]: "440" }}
-      >
-        <div className="relative transform-[perspective(1400px)_rotateX(1.2deg)_rotateY(-0.6deg)] rounded-4xl p-px shadow-[0_34px_80px_-28px_rgba(15,15,15,0.34)] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform group-hover:transform-[perspective(1400px)_rotateX(0deg)_rotateY(0deg)_translateY(-6px)]">
-          <div className="pointer-events-none absolute -inset-x-8 -top-10 -bottom-8 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_25%_0%,rgba(214,182,246,0.52),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(255,232,212,0.6),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.65),rgba(250,250,249,0))] blur-2xl" />
-          <div className="relative isolate overflow-hidden rounded-[calc(2rem-1px)] border border-hairline-soft bg-card/92 shadow-mockup backdrop-blur">
-            <span className="pointer-events-none absolute inset-x-0 top-0 z-20 h-px bg-linear-to-r from-transparent via-white to-transparent" />
-            <span className="pointer-events-none absolute -top-28 left-10 h-52 w-52 rounded-full bg-tint-lavender/55 blur-3xl" />
-            <span className="pointer-events-none absolute -right-20 top-32 h-48 w-48 rounded-full bg-tint-peach/50 blur-3xl" />
-
-            <div className="relative z-10 flex items-center gap-3 border-b border-hairline-soft bg-surface-soft/80 px-4 py-3 backdrop-blur sm:px-5">
-              <div className="flex items-center gap-2">
-                <span
-                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-peach"
-                  style={{ animationDelay: "-0.4s" }}
-                />
-                <span
-                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-yellow"
-                  style={{ animationDelay: "-1.2s" }}
-                />
-                <span
-                  className="animate-pulse-soft size-2.5 rounded-full bg-tint-mint"
-                  style={{ animationDelay: "-2s" }}
-                />
-              </div>
-              <span className="min-w-0 flex-1 text-center font-mono text-[10px] tracking-[0.2em] text-stone uppercase">
-                Conversation · Risograph studies
-              </span>
-              <span className="hidden rounded-full border border-hairline-soft bg-card/70 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-steel uppercase shadow-subtle sm:inline-flex">
-                OPFS ready
-              </span>
-            </div>
-
-            <div className="relative z-10 overflow-hidden bg-card/70 px-4 py-6 sm:px-8 sm:py-9 lg:px-10">
-              <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
-              <span className="pointer-events-none absolute bottom-6 left-8 h-32 w-32 rounded-full bg-tint-mint/35 blur-3xl" />
-              <div className="relative space-y-6">
-                <MockupUserBubble text={samplePrompts[0]} />
-                <MockupAssistantCard />
-              </div>
-            </div>
-
-            <div className="relative z-10 border-t border-hairline-soft bg-surface-soft/75 p-4 backdrop-blur sm:p-5 lg:p-6">
-              <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
-              <div className="mb-3 flex flex-wrap gap-2">
-                <MockupChip>openai</MockupChip>
-                <MockupChip>gpt-image-2</MockupChip>
-                <MockupChip>square</MockupChip>
-                <MockupChip>auto</MockupChip>
-              </div>
-              <div className="relative flex min-h-16 items-end gap-3 rounded-[1.35rem] border border-hairline-strong bg-card/95 p-3.5 shadow-[0_18px_42px_-24px_rgba(15,15,15,0.26),0_2px_8px_-4px_rgba(15,15,15,0.08),inset_0_1px_0_rgba(255,255,255,0.72)]">
-                <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
-                <span className="flex flex-1 items-center font-serif text-[13px] leading-relaxed text-stone italic">
-                  Describe the image you want to generate
-                  <span className="animate-type-caret ml-1 inline-block h-3.5 w-px translate-y-px bg-primary align-middle" />
+              <div className="relative z-10 flex items-center gap-3 border-b border-hairline-soft bg-surface-soft/80 px-4 py-3 backdrop-blur sm:px-5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="animate-pulse-soft size-2.5 rounded-full bg-tint-peach"
+                    style={{ animationDelay: "-0.4s" }}
+                  />
+                  <span
+                    className="animate-pulse-soft size-2.5 rounded-full bg-tint-yellow"
+                    style={{ animationDelay: "-1.2s" }}
+                  />
+                  <span
+                    className="animate-pulse-soft size-2.5 rounded-full bg-tint-mint"
+                    style={{ animationDelay: "-2s" }}
+                  />
+                </div>
+                <span className="min-w-0 flex-1 text-center font-mono text-[10px] tracking-[0.2em] text-stone">
+                  Workbench · Editorial artifacts
                 </span>
-                <span className="animate-halo-pulse inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-cta">
-                  <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
+                <span className="hidden rounded-full border border-hairline-soft bg-card/70 px-2.5 py-1 font-mono text-[9px] tracking-[0.18em] text-steel shadow-subtle sm:inline-flex">
+                  OPFS library
                 </span>
+              </div>
+
+              <div className="relative z-10 overflow-hidden bg-card/70 px-4 py-6 sm:px-8 sm:py-9 lg:px-10">
+                <span className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
+                <span className="pointer-events-none absolute bottom-6 left-8 h-32 w-32 rounded-full bg-tint-mint/35 blur-3xl" />
+                <div className="relative space-y-6">
+                  <MockupUserBubble text={samplePrompts[0]} />
+                  <MockupAssistantCard />
+                </div>
+              </div>
+
+              <div className="relative z-10 border-t border-hairline-soft bg-surface-soft/75 p-4 backdrop-blur sm:p-5 lg:p-6">
+                <span className="pointer-events-none absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <MockupChip>openai</MockupChip>
+                  <MockupChip>gpt-image-2</MockupChip>
+                  <MockupChip>1024 square</MockupChip>
+                  <MockupChip>gallery tags</MockupChip>
+                </div>
+                <div className="relative flex min-h-16 items-end gap-3 rounded-[1.35rem] border border-hairline-strong bg-card/95 p-3.5 shadow-[0_18px_42px_-24px_rgba(15,15,15,0.26),0_2px_8px_-4px_rgba(15,15,15,0.08),inset_0_1px_0_rgba(255,255,255,0.72)]">
+                  <span className="pointer-events-none absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-white to-transparent" />
+                  <span className="flex flex-1 items-center font-serif text-[13px] leading-relaxed text-stone italic">
+                    Compose an image design brief
+                    <span className="animate-type-caret ml-1 inline-block h-3.5 w-px translate-y-px bg-primary align-middle" />
+                  </span>
+                  <span className="animate-halo-pulse inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-cta">
+                    <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 4. Stat band — live counters animate when scrolled into view.
-           the three numbers are the contract reduced to a single glance. */}
+      {/* 4. Stat band */}
       <section className="reveal-on-scroll mt-20 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
-          mono="bytes uploaded"
+          mono="server persistence"
           icon={Lock}
           value={0}
           suffix=""
-          caption="to any server we own. ever."
+          caption="API keys, prompts, and images are not stored on our server."
         />
         <StatTile
-          mono="local generations"
+          mono="browser library"
           icon={Database}
           value={100}
           suffix="%"
-          caption="stored in your browser's OPFS."
+          caption="history and artifacts live in your local OPFS-backed workspace."
           highlight
         />
         <StatTile
-          mono="api key"
+          mono="provider route"
           icon={KeyRound}
           value={1}
           suffix=""
-          caption="yours. never proxied, never logged."
+          caption="generation request at a time, forwarded through /api/generate."
         />
       </section>
 
       {/* 5. BYOK band */}
-      <section className="reveal-on-scroll mt-20 grid gap-6 rounded-2xl bg-tint-yellow-bold p-8 sm:p-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:p-12">
+      <section className="reveal-on-scroll mt-20 grid gap-8 rounded-2xl bg-tint-yellow-bold p-8 sm:p-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-12">
         <div>
           <Eyebrow icon={KeyRound} phase={-0.6}>
             The contract
           </Eyebrow>
           <h2 className="text-display mt-4 text-ink">
-            Your key.{" "}
+            Your provider.{" "}
             <span className="font-serif text-primary italic">
-              Your storage.
+              Local archive.
             </span>{" "}
-            Your call.
+            Temporary relay.
           </h2>
           <p className="text-subtitle mt-4 max-w-xl text-slate">
-            Imgen never stores your API key, never proxies your prompts, never
-            sees your history. Configure any OpenAI-compatible endpoint —
-            OpenAI, Azure OpenAI, or your own — and we forward each request
-            once, then forget.
+            Configure OpenAI, Azure OpenAI, or any compatible endpoint. When you
+            generate, Imgen sends the key and prompt through /api/generate to
+            the provider, returns the asset, then keeps no server-side record.
           </p>
         </div>
         <div className="flex flex-col gap-3">
@@ -317,13 +349,13 @@ export default function Home() {
           </div>
           <p className="mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.2em] text-charcoal/60 uppercase">
             <Lock className="h-3 w-3" />
-            key + history never leave the browser
+            local history · transient provider request · no server persistence
           </p>
         </div>
       </section>
 
       {/* 5. Feature grid */}
-      <section className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.15fr_0.85fr_1fr_0.9fr]">
         {features.map((feature) => (
           <FeatureCard
             key={feature.title}
@@ -337,12 +369,14 @@ export default function Home() {
 
       {/* 6. How it works */}
       <section className="mt-24">
-        <div className="text-center">
-          <Eyebrow phase={-1.4}>Three steps</Eyebrow>
+        <div className="max-w-2xl text-left">
+          <Eyebrow phase={-1.4}>Three moves</Eyebrow>
           <h2 className="text-display mt-4 text-ink">
-            From zero to{" "}
-            <span className="font-serif text-primary italic">first image</span>{" "}
-            in a minute.
+            From empty gallery to{" "}
+            <span className="font-serif text-primary italic">
+              reusable artifact system
+            </span>
+            .
           </h2>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -357,22 +391,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 7. Sample prompts — horizontal marquee drift, pauses on hover */}
+      {/* 7. Sample prompts */}
       <section className="mt-24">
-        <div className="text-center">
-          <Eyebrow phase={-2}>Built for</Eyebrow>
-          <h2 className="text-heading-2 mt-4 text-ink">
-            Editorial work, not stock{" "}
-            <span className="font-serif text-primary italic">photos.</span>
-          </h2>
+        <div className="grid gap-4 lg:grid-cols-[0.72fr_1fr] lg:items-end">
+          <div>
+            <Eyebrow phase={-2}>Reusable briefs</Eyebrow>
+            <h2 className="text-heading-2 mt-4 text-ink">
+              Prompts that behave like{" "}
+              <span className="font-serif text-primary italic">
+                design specs.
+              </span>
+            </h2>
+          </div>
+          <p className="max-w-2xl text-sm leading-relaxed text-slate lg:justify-self-end">
+            Keep the language specific enough for a series: palette, medium,
+            crop, texture, and context travel with each artifact into the local
+            gallery.
+          </p>
         </div>
         <div className="reveal-on-scroll mt-10">
           <PromptMarquee items={samplePrompts} speed={56} />
         </div>
       </section>
 
-      {/* 8. Final CTA — antimetal-style deep aurora halo over brand-navy */}
-      <section className="reveal-on-scroll relative isolate mt-24 overflow-hidden rounded-2xl bg-brand-navy p-10 text-center sm:p-16 lg:p-20">
+      {/* 8. Final CTA */}
+      <section className="reveal-on-scroll relative isolate mt-24 overflow-hidden rounded-2xl bg-brand-navy p-10 text-left sm:p-16 lg:grid lg:grid-cols-[1fr_0.72fr] lg:items-end lg:p-20">
         <AuroraBackdrop tone="deep" />
         <div className="relative">
           <span className="inline-flex items-center gap-2 font-mono text-[10.5px] tracking-[0.2em] text-tint-lavender uppercase">
@@ -386,24 +429,24 @@ export default function Home() {
             ready when you are
           </span>
           <h2 className="text-display mt-4 text-white">
-            Open the workspace.
+            Open the workbench.
             <br />
             <span className="font-serif text-tint-lavender italic">
-              Bring your own key.
+              Bring your own provider.
             </span>
           </h2>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/chat" className={buttonVariants({ size: "lg" })}>
-              <Sparkles />
-              Start creating
-            </Link>
-            <Link
-              href="/gallery"
-              className={buttonVariants({ variant: "onDark", size: "lg" })}
-            >
-              Browse gallery
-            </Link>
-          </div>
+        </div>
+        <div className="relative mt-8 flex flex-wrap items-center gap-3 lg:mt-0 lg:justify-end">
+          <Link href="/chat" className={buttonVariants({ size: "lg" })}>
+            <Sparkles />
+            Start creating
+          </Link>
+          <Link
+            href="/gallery"
+            className={buttonVariants({ variant: "onDark", size: "lg" })}
+          >
+            Browse gallery
+          </Link>
         </div>
       </section>
 
@@ -470,9 +513,6 @@ function MockupAssistantCard() {
         <div className="animate-gradient-pan relative aspect-square w-full max-w-72 overflow-hidden rounded-xl border border-white/55 bg-linear-to-br from-[#d97463] via-brand-purple-300 to-brand-navy-mid shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_18px_36px_-28px_rgba(10,21,48,0.45)] sm:max-w-80">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.5),transparent_46%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_78%,rgba(255,255,255,0.18),transparent_52%)]" />
-          <div className="absolute left-4 top-4 rounded-full border border-white/35 bg-white/18 px-2.5 py-1 font-mono text-[9px] tracking-[0.16em] text-white/78 uppercase backdrop-blur-sm">
-            render 04
-          </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <Sparkles
               className="animate-float-soft h-8 w-8 text-white/82 drop-shadow-sm"
@@ -492,14 +532,6 @@ function MockupAssistantCard() {
         <p className="mt-2 hidden text-[11px] text-stone tabular-nums sm:block">
           2:14 PM · 412 KB · Elapsed 6.2s
         </p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-tint-lavender px-2.5 py-1 text-[10px] font-semibold text-brand-purple-800">
-            riso
-          </span>
-          <span className="rounded-full bg-tint-peach px-2.5 py-1 text-[10px] font-semibold text-brand-orange-deep">
-            bookstore
-          </span>
-        </div>
       </div>
     </div>
   );
