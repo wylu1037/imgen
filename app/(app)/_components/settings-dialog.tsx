@@ -920,10 +920,7 @@ function StorageSection() {
               : "—"
           }
         />
-        <StorageRow
-          label="Size"
-          value={info ? formatBytes(info.bytes) : "—"}
-        />
+        <StorageRow label="Size" value={info ? formatBytes(info.bytes) : "—"} />
         <StorageRow
           label="Messages"
           value={info ? info.messageCount.toLocaleString() : "—"}
@@ -955,7 +952,7 @@ function StorageSection() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-destructive/30 bg-destructive/[0.03] p-3">
+      <div className="rounded-lg border border-destructive/30 bg-destructive/3 p-3">
         <div className="mb-2 flex items-center gap-1.5">
           <AlertTriangle className="size-3.5 text-destructive" />
           <h4 className="text-[12px] font-semibold text-destructive">
