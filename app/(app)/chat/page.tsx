@@ -4,7 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { defaultImageModel, type OptionItem } from "@/lib/chat/constants";
-import type { NewChatMessage } from "@/lib/chat/types";
+import type { ChatMessage, NewChatMessage } from "@/lib/chat/types";
 
 import { useAppData } from "../_context/app-data-context";
 
@@ -19,6 +19,15 @@ type GenerateResponse = {
   revisedPrompt?: string;
   durationMs?: number;
   error?: string;
+};
+
+type GenerationRequest = {
+  conversationId: string;
+  prompt: string;
+  model: string;
+  size: string;
+  quality: string;
+  clearDraft?: boolean;
 };
 
 function generateTurnId(): string {
@@ -133,6 +142,115 @@ export default function ChatPage() {
     (dbStatus === "ready" || dbStatus === "error") &&
     (providerStatus === "ready" || providerStatus === "error");
 
+  async function runGeneration({
+    conversationId,
+    prompt,
+    model,
+    size,
+    quality,
+    clearDraft = false,
+  }: GenerationRequest) {
+    const trimmedApiKey = activeProvider?.apiKey.trim() || "";
+    const trimmedBaseURL = activeProvider?.baseURL.trim() || "";
+    const turnId = generateTurnId();
+
+    const userMessage: NewChatMessage = {
+      conversationId,
+      turnId,
+      role: "user",
+      content: prompt,
+      imageData: null,
+      model,
+      size,
+      quality,
+      revisedPrompt: null,
+      error: null,
+      durationMs: null,
+    };
+
+    try {
+      await append(userMessage);
+    } catch (err) {
+      console.error("[chat] failed to persist user message", err);
+      toast.error("Failed to save message.");
+      return;
+    }
+
+    if (clearDraft) setDraft("");
+    setPendingTurn({
+      turnId,
+      prompt,
+      model,
+      size,
+      quality,
+    });
+
+    let assistant: NewChatMessage;
+    const requestStartedAt = Date.now();
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          model,
+          size,
+          quality,
+          apiKey: trimmedApiKey,
+          baseURL: trimmedBaseURL,
+        }),
+      });
+      const data = (await response.json()) as GenerateResponse;
+
+      if (!response.ok || !data.image) {
+        throw new Error(data.error || "Image generation failed.");
+      }
+
+      assistant = {
+        conversationId,
+        turnId,
+        role: "assistant",
+        content: "",
+        imageData: data.image,
+        model: data.model || model,
+        size,
+        quality,
+        revisedPrompt: data.revisedPrompt || null,
+        error: null,
+        durationMs:
+          typeof data.durationMs === "number"
+            ? data.durationMs
+            : Date.now() - requestStartedAt,
+      };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Image generation failed.";
+      toast.error(message);
+      assistant = {
+        conversationId,
+        turnId,
+        role: "assistant",
+        content: "",
+        imageData: null,
+        model,
+        size,
+        quality,
+        revisedPrompt: null,
+        error: message,
+        durationMs: null,
+      };
+    } finally {
+      setPendingTurn(null);
+    }
+
+    try {
+      await append(assistant);
+      touchLocal(conversationId, Date.now());
+    } catch (err) {
+      console.error("[chat] failed to persist assistant message", err);
+    }
+  }
+
   async function handleSubmit() {
     const trimmedPrompt = draft.trim();
     const trimmedApiKey = activeProvider?.apiKey.trim() || "";
@@ -157,8 +275,6 @@ export default function ChatPage() {
       }
     }
 
-    // capture conversation id at submit time — even if the user switches
-    // conversations mid-fetch, the assistant reply still lands in the right turn.
     let submitConversationId = activeConversationId;
     if (conversations.activeConversation?.isDraft) {
       try {
@@ -174,104 +290,14 @@ export default function ChatPage() {
       return;
     }
 
-    const turnId = generateTurnId();
-
-    const userMessage: NewChatMessage = {
+    await runGeneration({
       conversationId: submitConversationId,
-      turnId,
-      role: "user",
-      content: trimmedPrompt,
-      imageData: null,
-      model: trimmedModel,
-      size,
-      quality,
-      revisedPrompt: null,
-      error: null,
-      durationMs: null,
-    };
-
-    try {
-      await append(userMessage);
-    } catch (err) {
-      console.error("[chat] failed to persist user message", err);
-      toast.error("Failed to save message.");
-      return;
-    }
-
-    setDraft("");
-    setPendingTurn({
-      turnId,
       prompt: trimmedPrompt,
       model: trimmedModel,
       size,
       quality,
+      clearDraft: true,
     });
-
-    let assistant: NewChatMessage;
-    const requestStartedAt = Date.now();
-    try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: trimmedPrompt,
-          model: trimmedModel,
-          size,
-          quality,
-          apiKey: trimmedApiKey,
-          baseURL: trimmedBaseURL,
-        }),
-      });
-      const data = (await response.json()) as GenerateResponse;
-
-      if (!response.ok || !data.image) {
-        throw new Error(data.error || "Image generation failed.");
-      }
-
-      assistant = {
-        conversationId: submitConversationId,
-        turnId,
-        role: "assistant",
-        content: "",
-        imageData: data.image,
-        model: data.model || trimmedModel,
-        size,
-        quality,
-        revisedPrompt: data.revisedPrompt || null,
-        error: null,
-        durationMs:
-          typeof data.durationMs === "number"
-            ? data.durationMs
-            : Date.now() - requestStartedAt,
-      };
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Image generation failed.";
-      toast.error(message);
-      assistant = {
-        conversationId: submitConversationId,
-        turnId,
-        role: "assistant",
-        content: "",
-        imageData: null,
-        model: trimmedModel,
-        size,
-        quality,
-        revisedPrompt: null,
-        error: message,
-        durationMs: null,
-      };
-    } finally {
-      setPendingTurn(null);
-    }
-
-    try {
-      await append(assistant);
-      // bump conversation order locally — db side already bumped via insert.
-      touchLocal(submitConversationId, Date.now());
-    } catch (err) {
-      console.error("[chat] failed to persist assistant message", err);
-    }
   }
 
   const handleScrollHandled = React.useCallback(() => {
@@ -295,6 +321,61 @@ export default function ChatPage() {
       return next;
     });
   }, []);
+
+  async function handleRetryTurn(message: ChatMessage) {
+    if (pendingTurn) return;
+
+    const trimmedApiKey = activeProvider?.apiKey.trim() || "";
+    const trimmedBaseURL = activeProvider?.baseURL.trim() || "";
+    const retryModel = (message.model || selectedModel).trim();
+    const retrySize = message.size || "auto";
+    const retryQuality = message.quality || "auto";
+
+    if (!trimmedApiKey) {
+      toast.error("Enter your API key in provider settings.");
+      return;
+    }
+    if (!retryModel) {
+      toast.error("Enter an image model.");
+      return;
+    }
+    if (trimmedBaseURL) {
+      try {
+        new URL(trimmedBaseURL);
+      } catch {
+        toast.error("Base URL must be a valid URL.");
+        return;
+      }
+    }
+
+    try {
+      await deleteTurn(message.turnId);
+      if (
+        activeConversationId &&
+        getSelectedTurn(activeConversationId) === message.turnId
+      ) {
+        setSelectedTurn(activeConversationId, null);
+      }
+      setSelectedTurnIds((current) => {
+        if (!current.has(message.turnId)) return current;
+        const next = new Set(current);
+        next.delete(message.turnId);
+        return next;
+      });
+    } catch (err) {
+      console.error("[chat] failed to retry turn", err);
+      toast.error("Failed to retry message.");
+      return;
+    }
+
+    await runGeneration({
+      conversationId: message.conversationId,
+      prompt: message.content,
+      model: retryModel,
+      size: retrySize,
+      quality: retryQuality,
+    });
+  }
 
   const handleDeleteTurn = React.useCallback(
     async (turnId: string) => {
@@ -377,8 +458,12 @@ export default function ChatPage() {
           messages={conversationMessages}
           pendingTurn={pendingTurn}
           isEmpty={conversationMessages.length === 0 && !pendingTurn}
+          isGenerating={isGenerating}
           onPickSample={(prompt) => setDraft(prompt)}
           onEditPrompt={(prompt) => setDraft(prompt)}
+          onRetryTurn={(message) => {
+            void handleRetryTurn(message);
+          }}
           onDeleteTurn={(turnId) => {
             void handleDeleteTurn(turnId);
           }}

@@ -20,8 +20,10 @@ type MessageListProps = {
   messages: ChatMessage[];
   pendingTurn: PendingTurn | null;
   isEmpty: boolean;
+  isGenerating: boolean;
   onPickSample: (prompt: string) => void;
   onEditPrompt: (prompt: string) => void;
+  onRetryTurn: (message: ChatMessage) => void;
   onDeleteTurn: (turnId: string) => void;
   onAddTag: (messageId: string, tagName: string) => Promise<void> | void;
   onRemoveTag: (messageId: string, tagId: string) => Promise<void> | void;
@@ -37,8 +39,10 @@ export function MessageList({
   messages,
   pendingTurn,
   isEmpty,
+  isGenerating,
   onPickSample,
   onEditPrompt,
+  onRetryTurn,
   onDeleteTurn,
   onAddTag,
   onRemoveTag,
@@ -89,7 +93,9 @@ export function MessageList({
               message={message}
               avatarId={avatarId}
               onEdit={onEditPrompt}
+              onRetry={onRetryTurn}
               onDeleteTurn={onDeleteTurn}
+              retryDisabled={isGenerating}
               selected={selectedTurnIds.has(message.turnId)}
               selectionMode={selectionMode}
               onToggleSelection={onToggleTurnSelection}

@@ -12,6 +12,7 @@ import {
   Download,
   Expand,
   Pencil,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 
@@ -42,7 +43,9 @@ type UserBubbleProps = {
   message: ChatMessage;
   avatarId?: string | null;
   onEdit: (prompt: string) => void;
+  onRetry: (message: ChatMessage) => void;
   onDeleteTurn: (turnId: string) => void;
+  retryDisabled: boolean;
   selected: boolean;
   selectionMode: boolean;
   onToggleSelection: (turnId: string) => void;
@@ -71,11 +74,13 @@ function formatStatsLine(message: ChatMessage): string {
 function MessageActionButton({
   label,
   onClick,
+  disabled,
   className,
   children,
 }: {
   label: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  disabled?: boolean;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -84,10 +89,11 @@ function MessageActionButton({
       type="button"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "inline-flex h-7 w-7 items-center justify-center rounded-md border border-hairline-soft bg-card/95 text-steel shadow-subtle",
         "opacity-0 transition-all duration-150 ease-out hover:bg-secondary hover:text-ink focus:opacity-100 focus:ring-[3px] focus:ring-primary/15 focus:outline-none",
-        "group-focus-within:opacity-100 group-hover:opacity-100",
+        "group-focus-within:opacity-100 group-hover:opacity-100 disabled:pointer-events-none",
         className,
       )}
     >
@@ -172,7 +178,9 @@ export function UserBubble({
   message,
   avatarId,
   onEdit,
+  onRetry,
   onDeleteTurn,
+  retryDisabled,
   selected,
   selectionMode,
   onToggleSelection,
@@ -185,6 +193,11 @@ export function UserBubble({
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     onEdit(message.content);
+  };
+
+  const handleRetry = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onRetry(message);
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -222,6 +235,13 @@ export function UserBubble({
         </MessageActionButton>
         <MessageActionButton label="Edit message" onClick={handleEdit}>
           <Pencil className="h-3.5 w-3.5" />
+        </MessageActionButton>
+        <MessageActionButton
+          label="Retry message"
+          onClick={handleRetry}
+          disabled={retryDisabled}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
         </MessageActionButton>
         <MessageActionButton
           label="Delete message"
