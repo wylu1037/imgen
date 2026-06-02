@@ -5,6 +5,16 @@ import * as React from "react";
 import { Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useUserAvatar } from "@/hooks/use-user-avatar";
 import type { ChatMessage } from "@/lib/chat/types";
 
@@ -15,6 +25,11 @@ import {
   type PendingTurn,
 } from "./message-bubble";
 import { ChatEmptyState } from "./empty-state";
+
+type PendingDelete =
+  | { type: "single"; turnId: string }
+  | { type: "selected"; count: number }
+  | null;
 
 type MessageListProps = {
   messages: ChatMessage[];
@@ -58,6 +73,17 @@ export function MessageList({
   const { avatarId } = useUserAvatar();
   const selectedCount = selectedTurnIds.size;
   const selectionMode = selectedCount > 0;
+  const [pendingDelete, setPendingDelete] = React.useState<PendingDelete>(null);
+
+  const handleConfirmDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === "single") {
+      onDeleteTurn(pendingDelete.turnId);
+    } else {
+      onDeleteSelectedTurns();
+    }
+    setPendingDelete(null);
+  };
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -94,7 +120,9 @@ export function MessageList({
               avatarId={avatarId}
               onEdit={onEditPrompt}
               onRetry={onRetryTurn}
-              onDeleteTurn={onDeleteTurn}
+              onDeleteTurn={(turnId) =>
+                setPendingDelete({ type: "single", turnId })
+              }
               retryDisabled={isGenerating}
               selected={selectedTurnIds.has(message.turnId)}
               selectionMode={selectionMode}
@@ -132,7 +160,9 @@ export function MessageList({
               type="button"
               variant="destructive"
               size="sm"
-              onClick={onDeleteSelectedTurns}
+              onClick={() =>
+                setPendingDelete({ type: "selected", count: selectedCount })
+              }
               className="h-8 rounded-md text-xs!"
             >
               <Trash2 className="size-3" />
@@ -141,6 +171,39 @@ export function MessageList({
           </div>
         </div>
       ) : null}
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[12px] font-semibold text-ink">
+              {pendingDelete?.type === "selected"
+                ? `Delete ${pendingDelete.count} messages?`
+                : "Delete message?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-0.5 text-[11px] leading-4 text-steel">
+              {pendingDelete?.type === "selected"
+                ? "This will permanently remove the selected message turns. This cannot be undone."
+                : "This will permanently remove this message turn. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel size="sm" className="h-7 text-[12px]!">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              size="sm"
+              onClick={handleConfirmDelete}
+              className="h-7 bg-destructive text-[12px]! text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
